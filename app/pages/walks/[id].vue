@@ -93,7 +93,12 @@ async function loadWalk() {
 }
 
 watch(() => [authSession.value.data?.user?.id, walkId.value] as const, ([userId, id]) => {
-  if (userId && id) void loadWalk()
+  if (userId && id) {
+    void loadWalk()
+  } else if (!authSession.value.isPending) {
+    loading.value = false
+    error.value = 'Sign in to view this walk.'
+  }
 }, { immediate: true })
 
 function moveStop(index: number, direction: -1 | 1) {
