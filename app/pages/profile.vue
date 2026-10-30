@@ -47,16 +47,12 @@ async function saveProfile() {
   error.value = ''
   saved.value = false
   saving.value = true
-  let nameSaved = false
   try {
-    const result = await authClient.updateUser({ name: name.value.trim() })
-    if (result.error) throw new Error(result.error.message || 'Your name could not be saved.')
-    nameSaved = true
     const interests = interestGroups.flatMap(group => group.items.filter(item => selected.value.includes(item)).map(name => ({ name, category: group.category })))
-    await $fetch('/api/profile', { method: 'PUT', body: { profile: { bio: bio.value.trim(), homeBase: homeBase.value.trim(), travelStyle: travelStyle.value }, interests } })
+    await $fetch('/api/profile', { method: 'PUT', body: { name: name.value.trim(), profile: { bio: bio.value.trim(), homeBase: homeBase.value.trim(), travelStyle: travelStyle.value }, interests } })
     saved.value = true
-  } catch {
-    error.value = nameSaved ? 'Your name was saved, but the rest of your profile could not be saved. Please try again.' : 'Your profile could not be saved. Please try again.'
+  } catch (cause) {
+    error.value = cause instanceof Error ? cause.message : 'Your profile could not be saved. Please try again.'
   } finally { saving.value = false }
 }
 

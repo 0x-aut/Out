@@ -1,4 +1,5 @@
-import { createError } from 'h3'
+import { createError, toWebRequest } from 'h3'
+import { auth } from '../lib/auth'
 import { database } from '../utils/database'
 import { requireUser } from '../utils/auth-session'
 import {
@@ -21,6 +22,7 @@ const travelStyles = new Set([
 export default defineEventHandler(async (event) => {
   const user = await requireUser(event)
   const body = await readJsonObject(event)
+  const name = stringField(body.name, 'name', 80, true)!
   const profile = asRecord(body.profile, 'profile')
   const bio = stringField(profile.bio, 'bio', 240) ?? ''
   const homeBase = stringField(profile.homeBase, 'homeBase', 100) ?? ''
@@ -32,6 +34,7 @@ export default defineEventHandler(async (event) => {
 
   const interests = parseInterests(body.interests)
   const client = await database.connect()
+  let profileCommitted = false
 
   try {
     await client.query('BEGIN')
@@ -49,10 +52,20 @@ export default defineEventHandler(async (event) => {
     }
 
     await client.query('COMMIT')
-    return { success: true, profile: { bio, homeBase, travelStyle }, interests }
+    profileCommitted = true
+
+    await auth.api.updateUser({
+      headers: toWebRequest(event).headers,
+      body: { name }
+    })
+
+    return { success: true, name, profile: { bio, homeBase, travelStyle }, interests }
   } catch (error) {
-    await client.query('ROLLBACK')
+    if (!profileCommitted) await client.query('ROLLBACK')
     console.error('Could not save Out profile', error)
+    if (profileCommitted) {
+      throw createError({ statusCode: 502, statusMessage: 'Your profile details were saved, but your account name could not be updated. Please save again.' })
+    }
     throw createError({ statusCode: 500, statusMessage: 'Your profile could not be saved' })
   } finally {
     client.release()
