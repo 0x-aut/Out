@@ -7,7 +7,7 @@ export interface WalkItem {
   duration: string
   stops: string
   distance: string
-  image: string
+  image: string | null
   position?: string
 }
 
@@ -22,12 +22,14 @@ const emit = defineEmits<{ select: [id: string] }>()
     class="group relative h-[190px] min-w-[218px] flex-1 snap-start overflow-hidden bg-[#d4d1cb] text-white shadow-[0_5px_14px_rgba(28,28,33,0.10)] sm:h-[198px] sm:min-w-[230px]"
   >
     <img
+      v-if="walk.image"
       :src="walk.image"
       :alt="walk.title"
       :style="{ objectPosition: walk.position || 'center' }"
       class="absolute inset-0 h-full w-full object-cover transition duration-500 group-hover:scale-[1.035]"
       loading="lazy"
     />
+    <div v-else class="absolute inset-0 bg-[radial-gradient(ellipse_at_25%_15%,#aaa4d1_0%,#65617d_48%,#292932_100%)]" />
     <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-black/5" />
     <button type="button" class="absolute inset-0 z-10" :aria-label="`Open ${walk.title}`" @click="emit('select', walk.id)" />
 
