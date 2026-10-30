@@ -78,7 +78,7 @@ export default defineEventHandler(async (event) => {
             : error.message
         })
       }
-      if (error.statusCode === 400 && homeBase) {
+      if ([400, 404].includes(error.statusCode) && homeBase) {
         throw createError({
           statusCode: 422,
           statusMessage: 'Qloo could not match your home base. Update the city or neighbourhood in your profile.'

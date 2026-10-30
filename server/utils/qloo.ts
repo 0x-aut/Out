@@ -42,6 +42,7 @@ interface CacheEntry<T> {
 
 interface QlooCache {
   tags: Map<string, CacheEntry<QlooTag[]>>
+  localities: Map<string, CacheEntry<{ id: string; name: string } | null>>
   recommendations: Map<string, CacheEntry<QlooRecommendations>>
 }
 
@@ -64,8 +65,10 @@ interface QlooEntity {
 const qlooGlobal = globalThis as typeof globalThis & { __outQlooCache?: QlooCache }
 const cache = qlooGlobal.__outQlooCache ??= {
   tags: new Map<string, CacheEntry<QlooTag[]>>(),
+  localities: new Map<string, CacheEntry<{ id: string; name: string } | null>>(),
   recommendations: new Map<string, CacheEntry<QlooRecommendations>>()
 }
+cache.localities ??= new Map<string, CacheEntry<{ id: string; name: string } | null>>()
 
 const MIN_QLOO_REQUEST_INTERVAL = 250
 let qlooRequestQueue = Promise.resolve()
@@ -224,6 +227,55 @@ function extractTagRecords(payload: Record<string, unknown>): QlooTag[] {
 
     return [{ id, name, types }]
   })
+}
+
+function extractSearchEntities(payload: Record<string, unknown>): Array<Record<string, unknown>> {
+  const results = payload.results
+  if (Array.isArray(results)) return results.map(asRecord)
+
+  const resultRecord = asRecord(results)
+  if (Array.isArray(resultRecord.entities)) return resultRecord.entities.map(asRecord)
+  if (Array.isArray(resultRecord.results)) return resultRecord.results.map(asRecord)
+  if (Array.isArray(payload.entities)) return payload.entities.map(asRecord)
+
+  return []
+}
+
+async function resolveLocality(query: string): Promise<{ id: string; name: string }> {
+  const cacheKey = query.toLocaleLowerCase()
+  const cached = cache.localities.get(cacheKey)
+  if (cached && cached.expiresAt > Date.now()) {
+    if (cached.value) return cached.value
+    throw new QlooApiError(404, 'Qloo could not match the home base.')
+  }
+
+  const params = new URLSearchParams({
+    query,
+    types: 'urn:entity:locality',
+    take: '5',
+    sort_by: 'match'
+  })
+  const payload = await qlooGet('/search', params)
+  const entities = extractSearchEntities(payload)
+  const locality = entities.flatMap(entity => {
+    const id = stringValue(entity.entity_id, entity.id, entity.entityId)
+    const name = stringValue(entity.name)
+    if (!id || !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id) || !name) {
+      return []
+    }
+    return [{ id, name }]
+  })[0] || null
+
+  cache.localities.set(cacheKey, {
+    value: locality,
+    expiresAt: Date.now() + (locality ? TAG_CACHE_TTL : RECOMMENDATION_CACHE_TTL)
+  })
+
+  if (!locality) {
+    throw new QlooApiError(404, 'Qloo could not match the home base.')
+  }
+
+  return locality
 }
 
 async function searchTags(query: string): Promise<QlooTag[]> {
@@ -418,7 +470,15 @@ export async function getQlooPlaceRecommendations(input: {
   }))
   const signals = [...interests, ...styleSignals]
 
-  const resolved = await mapWithConcurrency(signals, 4, resolveOneInterest)
+  const homeBase = input.homeBase.trim()
+  if (!homeBase) {
+    return { places: [], matchedInterests: [], usedTasteSignals: false }
+  }
+
+  const [resolved, locality] = await Promise.all([
+    mapWithConcurrency(signals, 4, resolveOneInterest),
+    resolveLocality(homeBase)
+  ])
   const resolvedByInterest = new Map<string, QlooTag[]>()
   for (let index = 0; index < signals.length; index++) {
     resolvedByInterest.set(signals[index]!.name, resolved[index] || [])
@@ -429,13 +489,8 @@ export async function getQlooPlaceRecommendations(input: {
     .filter(interest => (resolvedByInterest.get(interest.name) || []).length > 0)
     .map(interest => interest.name)
 
-  const homeBase = input.homeBase.trim()
-  if (!tagIds.length && !homeBase) {
-    return { places: [], matchedInterests, usedTasteSignals: false }
-  }
-
   const recommendationKey = JSON.stringify([
-    homeBase.toLocaleLowerCase(),
+    locality.id,
     tagIds,
     matchedInterests
   ])
@@ -449,8 +504,9 @@ export async function getQlooPlaceRecommendations(input: {
 
   // Tags belong in signal.interests.tags: filter.tags would constrain results rather than rank by taste.
   if (tagIds.length) params.set('signal.interests.tags', tagIds.join(','))
-  // Qloo's Place insights support filter.location.query for locality-scoped place results.
-  if (homeBase) params.set('filter.location.query', homeBase)
+  // Place insights support filter.location. Resolve the locality UUID via /search
+  // instead of relying on filter.location.query, which is not listed for Place.
+  params.set('filter.location', locality.id)
 
   const payload = await qlooGet('/v2/insights/', params)
   const places = extractEntities(payload)
