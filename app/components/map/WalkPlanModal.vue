@@ -54,7 +54,7 @@ function endDrag() {
     <section
       ref="panel"
       aria-labelledby="walk-plan-title"
-      class="max-h-[88dvh] w-full max-w-[480px] overflow-y-auto rounded-t-[30px] bg-white px-5 pb-[max(24px,env(safe-area-inset-bottom))] pt-4 text-center sm:px-6"
+      class="max-h-[88dvh] w-full max-w-[390px] overflow-y-auto rounded-t-[30px] bg-white px-5 pb-[max(24px,env(safe-area-inset-bottom))] pt-4 text-center sm:px-6"
       :style="{ transform: `translateY(${dragY}px)`, transition: dragStart === null ? 'transform 220ms ease-out' : 'none' }"
     >
       <div
@@ -84,7 +84,7 @@ function endDrag() {
           <button v-for="option in options" :key="option" type="button" :aria-pressed="props.duration === option" class="h-10 min-w-[57px] rounded-full px-4 text-[11px] font-semibold transition active:scale-[0.98]" :class="props.duration === option ? 'bg-gradient-to-b from-[#303036] to-[#151519] text-white shadow-[0_4px_10px_rgba(22,22,27,0.20)]' : 'border border-[#e9e9ed] bg-white text-[#25252b] hover:bg-[#f8f8fa]'" @click="emit('update:duration', option)">{{ option }}</button>
         </div>
       </div>
-      <ActionButton block class="mt-5" @click="emit('build')">
+      <ActionButton block class="mt-5 !h-12" @click="emit('build')">
         <Check v-if="props.built" :size="13" />
         {{ props.built ? props.duration + ' walk is ready' : 'Build my ' + props.duration + ' walk' }}
       </ActionButton>
