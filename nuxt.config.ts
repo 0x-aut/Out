@@ -12,6 +12,13 @@ export default defineNuxtConfig({
       pathPrefix: false
     }
   ],
+  runtimeConfig: {
+    public: {
+      // A browser-visible token is required by Mapbox GL JS. Never expose MAPBOX_API_KEY here.
+      mapboxToken: process.env.NUXT_PUBLIC_MAPBOX_TOKEN
+        || (process.env.MAPBOX_API_KEY?.startsWith('pk.') ? process.env.MAPBOX_API_KEY : '')
+    }
+  },
   vite: {
     plugins: [
       tailwindcss(),
