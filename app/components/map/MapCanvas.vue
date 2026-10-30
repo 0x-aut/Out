@@ -275,7 +275,6 @@ onMounted(async () => {
 onBeforeUnmount(() => {
   markers.forEach(marker => marker.remove())
   markers = []
-  markerById.clear()
   geolocateControl = null
   map?.remove()
   map = null
