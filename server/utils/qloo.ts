@@ -434,7 +434,11 @@ export async function getQlooPlaceRecommendations(input: {
     return { places: [], matchedInterests, usedTasteSignals: false }
   }
 
-  const recommendationKey = JSON.stringify([homeBase.toLocaleLowerCase(), tagIds])
+  const recommendationKey = JSON.stringify([
+    homeBase.toLocaleLowerCase(),
+    tagIds,
+    matchedInterests
+  ])
   const cached = cache.recommendations.get(recommendationKey)
   if (cached && cached.expiresAt > Date.now()) return cached.value
 
