@@ -1,48 +1,43 @@
 <script setup lang="ts">
-import { MessageCircle, X } from '@lucide/vue'
+import { ArrowUp, X } from '@lucide/vue'
 import { useSmoothCorners } from '@lisse/vue'
 
 const props = defineProps<{ modelValue: boolean; initialPrompt: string }>()
 const emit = defineEmits<{ 'update:modelValue': [value: boolean]; save: [value: string] }>()
 const panel = ref<HTMLElement | null>(null)
+const input = ref('')
 
-useSmoothCorners(panel, { radius: 30, smoothing: 0.82 }, {
+useSmoothCorners(panel, { radius: 28, smoothing: 0.82 }, {
   effects: {
     innerBorder: { width: 1, color: '#ffffff', opacity: 1 },
-    shadow: { offsetX: 0, offsetY: 12, blur: 38, spread: 0, color: '#16161c', opacity: 0.22 }
+    shadow: { offsetX: 0, offsetY: -8, blur: 32, spread: 0, color: '#16161c', opacity: 0.18 }
   }
 })
 
-const draft = ref('')
 watch(() => [props.modelValue, props.initialPrompt] as const, ([open, prompt]) => {
-  if (open) draft.value = prompt
+  if (open) input.value = prompt
 }, { immediate: true })
 
 function close() { emit('update:modelValue', false) }
-function save() { emit('save', draft.value.trim()) }
+function submit() {
+  const value = input.value.trim()
+  if (!value) return
+  emit('save', value)
+}
 </script>
 
 <template>
-  <div v-if="props.modelValue" class="fixed inset-0 z-[60] flex items-end justify-center bg-[#17171c]/30 px-0 pb-0 backdrop-blur-[2px] sm:items-center sm:px-4 sm:py-8" @click.self="close" @keydown.esc="close">
-    <section ref="panel" aria-labelledby="chat-modal-title" class="flex max-h-[86dvh] w-full max-w-[430px] flex-col overflow-hidden bg-white px-5 pb-[max(20px,env(safe-area-inset-bottom))] pt-4 sm:pb-5">
-      <header class="flex items-center justify-between gap-3">
-        <div class="flex min-w-0 items-center gap-2.5">
-          <span class="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[#dff5f5] text-[#299da5]"><MessageCircle :size="17" :stroke-width="1.8" /></span>
-          <div class="min-w-0 text-left">
-            <h2 id="chat-modal-title" class="unmodified-font-san text-[17px] font-bold tracking-[-0.045em] text-[#19191e]">Tell me the vibe</h2>
-            <p class="text-[10px] text-[#777780]">Shape the kind of walk you want</p>
-          </div>
+  <div v-if="props.modelValue" class="fixed inset-0 z-[60] flex items-end justify-center bg-[#17171c]/30 px-0 pb-0 backdrop-blur-[2px]" @click.self="close" @keydown.esc="close">
+    <section ref="panel" aria-label="Ask Out" class="w-full max-w-[560px] rounded-t-[28px] bg-white px-4 pb-[max(18px,env(safe-area-inset-bottom))] pt-3.5 sm:px-5">
+      <div class="mx-auto mb-3 h-1 w-9 rounded-full bg-[#e6e6eb]" />
+      <form class="flex items-end gap-2" @submit.prevent="submit">
+        <div class="min-h-[48px] min-w-0 flex-1 rounded-[23px] border border-[#e8e8ed] bg-[#f8f8fa] px-4 py-3">
+          <textarea v-model="input" rows="1" aria-label="Message Out" placeholder="Ask Out anything..." class="block max-h-32 min-h-[22px] w-full resize-none bg-transparent text-[13px] leading-[22px] text-[#25252b] outline-none placeholder:text-[#92929a]" @keydown.enter.exact.prevent="submit" />
         </div>
-        <button type="button" aria-label="Close chat" class="grid h-8 w-8 shrink-0 place-items-center rounded-full text-[#55555d] transition hover:bg-[#f2f2f5]" @click="close"><X :size="17" /></button>
-      </header>
-      <div class="mt-5 flex-1 overflow-y-auto rounded-[20px] bg-[#f6f6f8] p-3.5 text-left">
-        <p class="max-w-[290px] text-[11px] leading-relaxed text-[#64646d]">What would make this walk feel like your kind of day? Tell me what you’re in the mood for.</p>
-        <div v-if="draft" class="ml-auto mt-3 max-w-[90%] rounded-[18px] rounded-br-md bg-[#19191e] px-3.5 py-2.5 text-[11px] leading-relaxed text-white">{{ draft }}</div>
-        <p v-else class="mt-3 text-[10px] text-[#96969e]">Your message will appear here.</p>
-      </div>
-      <form class="mt-3 flex flex-col gap-2.5" @submit.prevent="save">
-        <textarea v-model="draft" rows="3" aria-label="Describe your vibe" placeholder="A slow afternoon, beautiful views, good coffee..." class="w-full resize-none rounded-[18px] border border-[#e8e8ed] bg-white px-3.5 py-3 text-[12px] leading-relaxed text-[#25252b] outline-none placeholder:text-[#92929a] focus:border-[#c9c9d4]" />
-        <ActionButton block type="submit" :disabled="!draft.trim()">Use this vibe</ActionButton>
+        <button type="submit" aria-label="Send message" :disabled="!input.trim()" class="mb-0.5 grid h-11 w-11 shrink-0 place-items-center rounded-full bg-gradient-to-b from-[#303036] to-[#151519] text-white shadow-[0_4px_10px_rgba(22,22,27,0.20)] transition active:scale-[0.96] disabled:cursor-not-allowed disabled:opacity-40">
+          <ArrowUp :size="19" :stroke-width="2.2" />
+        </button>
+        <button type="button" aria-label="Close Ask Out" class="mb-1 grid h-8 w-8 shrink-0 place-items-center rounded-full text-[#777780] transition hover:bg-[#f2f2f5]" @click="close"><X :size="16" /></button>
       </form>
     </section>
   </div>
