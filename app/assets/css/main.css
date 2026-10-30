@@ -1,0 +1,53 @@
+@import "tailwindcss";
+
+@theme {
+  --font-san: "Geist", sans-serif;
+  --color-out-ink: #19191e;
+  --color-out-lavender: #eeeffb;
+  --color-out-paper: #f7f7fb;
+  --color-out-line: #e8e8ed;
+}
+
+@utility unmodified-font-san {
+  font-family: "Geist", sans-serif;
+  font-variation-settings: normal;
+  font-feature-settings: normal;
+}
+
+:root {
+  color-scheme: light;
+  font-family: "Geist", sans-serif;
+  background: #eeeffb;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+html,
+body,
+#__nuxt {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+}
+
+button,
+input {
+  font: inherit;
+}
+
+::selection {
+  color: #19191e;
+  background: #d9ddff;
+}
+
+
+@utility hide-scrollbar {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
