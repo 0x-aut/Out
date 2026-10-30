@@ -2,6 +2,7 @@
 import { MapPin, Sparkles } from '@lucide/vue'
 
 defineProps<{
+  personalized: boolean
   place: {
     id: string
     name: string
@@ -28,8 +29,8 @@ defineProps<{
       <div v-else class="absolute inset-0 bg-[radial-gradient(ellipse_at_30%_20%,#d8daf1_0%,#e9eaf5_48%,#f4f4f8_100%)]" />
       <div class="absolute inset-0 bg-gradient-to-t from-black/35 via-transparent to-black/5" />
       <span class="absolute left-3 top-3 inline-flex h-6 items-center gap-1.5 rounded-full bg-white/95 px-2.5 text-[9px] font-semibold text-[#24242a] shadow-sm">
-        <Sparkles :size="11" />
-        Picked for you
+        <Sparkles v-if="personalized" :size="11" />
+        {{ personalized ? 'Picked for you' : 'Nearby' }}
       </span>
     </div>
 

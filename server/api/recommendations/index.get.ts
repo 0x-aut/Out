@@ -54,7 +54,8 @@ export default defineEventHandler(async (event) => {
   const homeBase = profile?.homeBase?.trim() || legacy.homeBase?.trim() || ''
   const travelStyle = profile?.travelStyle || legacy.travelStyle || 'Curious wanderer'
 
-  if (!homeBase && !interests.length && travelStyle === 'Curious wanderer') {
+  // Out is a nearby discovery product: never show global results as local recommendations.
+  if (!homeBase) {
     return {
       status: 'profile_incomplete',
       location: null,

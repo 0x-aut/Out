@@ -26,6 +26,7 @@ const recommendationLoading = ref(false)
 const recommendationError = ref('')
 const recommendationStatus = ref<'idle' | 'loading' | RecommendationResponse['status']>('idle')
 const recommendationLocation = ref<string | null>(null)
+const recommendationPersonalized = ref(false)
 let recommendationRequestId = 0
 const vibe = ref('')
 const popularTab = ref<'spots' | 'walks'>('spots')
@@ -61,6 +62,7 @@ async function loadRecommendations() {
     if (requestId !== recommendationRequestId) return
     recommendationItems.value = response.items
     recommendationLocation.value = response.location
+    recommendationPersonalized.value = response.personalized
     recommendationStatus.value = response.status
   } catch {
     if (requestId !== recommendationRequestId) return
@@ -80,6 +82,7 @@ watch(() => authSession.value.data?.user?.id, userId => {
     recommendationItems.value = []
     recommendationError.value = ''
     recommendationLocation.value = null
+    recommendationPersonalized.value = false
     recommendationStatus.value = 'idle'
     recommendationLoading.value = false
   }
@@ -138,7 +141,7 @@ function openSpot(id: string) {
         <section v-if="authSession.data?.user" aria-labelledby="for-you-heading" class="min-w-0 lg:col-span-2">
           <div class="mb-3 flex items-center justify-between gap-3">
             <div>
-              <h2 id="for-you-heading" class="unmodified-font-san text-[15px] font-bold tracking-[-0.04em] text-[#202027]">Picked for your taste</h2>
+              <h2 id="for-you-heading" class="unmodified-font-san text-[15px] font-bold tracking-[-0.04em] text-[#202027]">{{ recommendationPersonalized ? 'Picked for your taste' : 'Places around you' }}</h2>
               <p class="mt-0.5 text-[10px] text-[#777780]">
                 {{ recommendationLocation ? `Around ${recommendationLocation}` : 'Based on the things you enjoy' }}
               </p>
@@ -156,14 +159,14 @@ function openSpot(id: string) {
             <button type="button" class="mt-2 text-[10px] font-semibold text-[#24242a] underline underline-offset-2" @click="loadRecommendations">Try again</button>
           </div>
           <div v-else-if="recommendationItems.length" class="hide-scrollbar -mx-4 flex snap-x snap-mandatory gap-2.5 overflow-x-auto px-4 pb-2 sm:mx-0 sm:px-0">
-            <RecommendationCard v-for="place in recommendationItems" :key="place.id" :place="place" />
+            <RecommendationCard v-for="place in recommendationItems" :key="place.id" :place="place" :personalized="recommendationPersonalized" />
           </div>
           <div v-else class="rounded-[20px] border border-white/90 bg-white/75 px-4 py-4 shadow-[0_4px_14px_rgba(28,28,33,0.04)]">
             <p class="text-[11px] font-semibold text-[#34343c]">
-              {{ recommendationStatus === 'profile_incomplete' ? 'A little more about you will make these picks better.' : 'We could not find a match just yet.' }}
+              {{ recommendationStatus === 'profile_incomplete' ? 'Add your home base to find places nearby.' : 'We could not find a match just yet.' }}
             </p>
             <p class="mt-1 text-[10px] leading-relaxed text-[#777780]">
-              {{ recommendationStatus === 'profile_incomplete' ? 'Add a few interests and your home base to get places shaped around your taste.' : 'Try adding a few more interests or checking your home base.' }}
+              {{ recommendationStatus === 'profile_incomplete' ? 'Set a city or neighbourhood in your profile. Add a few interests too, and Out can shape local picks around your taste.' : 'Try adding a few more interests or checking your home base.' }}
             </p>
             <NuxtLink to="/profile" class="mt-2 inline-flex text-[10px] font-semibold text-[#24242a] underline underline-offset-2">Update your profile</NuxtLink>
           </div>
