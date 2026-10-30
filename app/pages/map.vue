@@ -31,7 +31,7 @@ type SavedWalkResponse = {
 const router = useRouter()
 const routeQuery = useRoute()
 const authSession = authClient.useSession()
-const mapCanvas = ref<{ locateUser: () => void } | null>(null)
+const mapCanvas = ref<{ locateUser: () => void; focusPlace: (id: string) => void } | null>(null)
 
 const search = ref(typeof routeQuery.query.vibe === 'string' ? routeQuery.query.vibe : '')
 const chatOpen = ref(false)
@@ -53,7 +53,11 @@ const routeBuilding = ref(false)
 const walkSaving = ref(false)
 const walkSaved = ref(false)
 const plannerError = ref('')
+const activeWalk = ref<{ id: string; title: string; description: string | null; visibility: 'private' | 'public' } | null>(null)
 let recommendationRequestId = 0
+let mapTargetRequestId = 0
+let recommendationsReady = false
+let recommendationsPromise: Promise<void> | null = null
 
 useHead({ title: 'Map — Out' })
 
@@ -121,20 +125,162 @@ async function loadRecommendations() {
   }
 }
 
-watch(() => authSession.value.data?.user?.id, userId => {
-  if (userId) {
-    void loadRecommendations()
-  } else {
-    recommendationRequestId++
-    places.value = []
-    selectedIds.value = []
-    recommendationsError.value = ''
-    recommendationLocation.value = null
-    recommendationPersonalized.value = false
-    recommendationsLoading.value = false
-    clearRoute()
+async function ensureRecommendations() {
+  if (recommendationsReady) return
+  if (!recommendationsPromise) {
+    recommendationsPromise = loadRecommendations().finally(() => {
+      recommendationsReady = true
+      recommendationsPromise = null
+    })
   }
-}, { immediate: true })
+  await recommendationsPromise
+}
+
+async function loadExistingWalk(id: string) {
+  activeWalk.value = null
+  plannerError.value = ''
+  try {
+    const response = await $fetch<{ walk: {
+      id: string
+      title: string
+      description: string | null
+      visibility: 'private' | 'public'
+      durationMinutes: number | null
+      distanceMeters: number | null
+      stops: Array<{
+        id: string
+        placeId: string | null
+        name: string
+        address: string | null
+        latitude: number | null
+        longitude: number | null
+        notes: string | null
+        durationMinutes: number | null
+        imageUrl: string | null
+      }>
+    } }>('/api/walks/' + id)
+
+    const walk = response.walk
+    const locatedStops = walk.stops.filter(stop =>
+      typeof stop.latitude === 'number' && Number.isFinite(stop.latitude) &&
+      typeof stop.longitude === 'number' && Number.isFinite(stop.longitude)
+    )
+    if (!locatedStops.length) {
+      plannerError.value = 'This walk does not have map coordinates for its stops.'
+      return
+    }
+
+    const origin = locatedStops.find(stop => !stop.placeId) || locatedStops[0]!
+    const destinationStops = locatedStops.filter(stop => stop.id !== origin.id)
+    places.value = destinationStops.map(stop => ({
+      id: stop.placeId || stop.id,
+      name: stop.name,
+      category: null,
+      address: stop.address,
+      city: null,
+      country: null,
+      latitude: stop.latitude!,
+      longitude: stop.longitude!,
+      imageUrl: stop.imageUrl
+    }))
+    selectedIds.value = places.value.map(place => place.id)
+    userLocation.value = {
+      latitude: origin.latitude!,
+      longitude: origin.longitude!,
+      accuracy: 0
+    }
+    activeWalk.value = {
+      id: walk.id,
+      title: walk.title,
+      description: walk.description,
+      visibility: walk.visibility
+    }
+    routeDistance.value = walk.distanceMeters || 0
+    routeDuration.value = walk.durationMinutes ? walk.durationMinutes * 60 : 0
+    walkingRoute.value = null
+    walkSaved.value = false
+
+    const coordinates = locatedStops.map(stop => ({
+      latitude: stop.latitude!,
+      longitude: stop.longitude!
+    }))
+    if (coordinates.length >= 2) {
+      const routeResponse = await $fetch<DirectionsResponse>('/api/mapbox/directions', {
+        method: 'POST',
+        body: { coordinates }
+      })
+      walkingRoute.value = routeResponse.route.geometry
+      routeDistance.value = routeResponse.route.distance
+      routeDuration.value = routeResponse.route.duration
+    }
+  } catch (error) {
+    plannerError.value = apiErrorMessage(error, 'This saved walk could not be opened on the map.')
+  }
+}
+
+async function loadPlace(id: string) {
+  try {
+    const response = await $fetch<{ place: {
+      id: string
+      name: string
+      category: string | null
+      address: string | null
+      city: string | null
+      country: string | null
+      latitude: number | null
+      longitude: number | null
+      imageUrl: string | null
+    } }>('/api/places/' + id)
+    const place = response.place
+    if (typeof place.latitude !== 'number' || typeof place.longitude !== 'number') {
+      recommendationsError.value = 'This place does not have map coordinates.'
+      return
+    }
+    const mapPlace: MapPlace = {
+      id: place.id,
+      name: place.name,
+      category: place.category,
+      address: place.address,
+      city: place.city,
+      country: place.country,
+      latitude: place.latitude,
+      longitude: place.longitude,
+      imageUrl: place.imageUrl
+    }
+    if (!places.value.some(item => item.id === mapPlace.id)) places.value = [...places.value, mapPlace]
+    await nextTick()
+    mapCanvas.value?.focusPlace(mapPlace.id)
+  } catch (error) {
+    recommendationsError.value = apiErrorMessage(error, 'This place could not be opened on the map.')
+  }
+}
+
+async function syncMapTarget() {
+  const requestId = ++mapTargetRequestId
+  if (!authSession.value.data?.user?.id) return
+  await ensureRecommendations()
+  if (requestId !== mapTargetRequestId) return
+
+  const walkId = routeQuery.query.walk
+  const placeId = routeQuery.query.place
+  if (typeof walkId === 'string') {
+    await loadExistingWalk(walkId)
+    return
+  }
+
+  activeWalk.value = null
+  if (typeof placeId === 'string') await loadPlace(placeId)
+}
+
+watch(
+  () => [
+    authSession.value.data?.user?.id,
+    routeQuery.query.walk,
+    routeQuery.query.place
+  ] as const,
+  () => { void syncMapTarget() },
+  { immediate: true }
+)
 
 function matchesFilter(place: MapPlace, filter: string) {
   const value = (place.category + ' ' + place.name).toLocaleLowerCase()
@@ -256,44 +402,47 @@ async function saveWalk() {
   walkSaving.value = true
   plannerError.value = ''
 
-  const title = selectedPlaces.value.length === 1
+  const title = activeWalk.value?.title || (selectedPlaces.value.length === 1
     ? 'A walk to ' + selectedPlaces.value[0]!.name
-    : 'A walk around ' + selectedPlaces.value[0]!.name
+    : 'A walk around ' + selectedPlaces.value[0]!.name)
+  const body = {
+    title: title.slice(0, 120),
+    description: activeWalk.value?.description || 'A walking route starting from your current location.',
+    durationMinutes: Math.max(1, Math.ceil(routeDuration.value / 60)),
+    distanceMeters: Math.max(1, Math.round(routeDistance.value)),
+    visibility: activeWalk.value?.visibility || 'private',
+    stops: [
+      ...(userLocation.value ? [{
+        placeId: null,
+        name: 'Starting location',
+        address: null,
+        latitude: userLocation.value.latitude,
+        longitude: userLocation.value.longitude,
+        notes: null,
+        durationMinutes: null
+      }] : []),
+      ...selectedPlaces.value.map(place => ({
+        placeId: place.id,
+        name: place.name,
+        address: place.address,
+        latitude: place.latitude,
+        longitude: place.longitude,
+        notes: null,
+        durationMinutes: null
+      }))
+    ]
+  }
 
   try {
-    const response = await $fetch<SavedWalkResponse>('/api/walks', {
-      method: 'POST',
-      body: {
-        title: title.slice(0, 120),
-        description: 'A walking route starting from your current location.',
-        durationMinutes: Math.max(1, Math.ceil(routeDuration.value / 60)),
-        distanceMeters: Math.max(1, Math.round(routeDistance.value)),
-        visibility: 'private',
-        stops: [
-          {
-            placeId: null,
-            name: 'Starting location',
-            address: null,
-            latitude: userLocation.value!.latitude,
-            longitude: userLocation.value!.longitude,
-            notes: null,
-            durationMinutes: null
-          },
-          ...selectedPlaces.value.map(place => ({
-            placeId: place.id,
-            name: place.name,
-            address: place.address,
-            latitude: place.latitude,
-            longitude: place.longitude,
-            notes: null,
-            durationMinutes: null
-          }))
-        ]
-      }
-    })
-
-    walkSaved.value = true
-    await router.replace({ path: '/map', query: { savedWalk: response.walk.id } })
+    if (activeWalk.value) {
+      await $fetch('/api/walks/' + activeWalk.value.id, { method: 'PUT', body })
+      walkSaved.value = true
+      await router.replace('/walks/' + activeWalk.value.id)
+    } else {
+      const response = await $fetch<SavedWalkResponse>('/api/walks', { method: 'POST', body })
+      walkSaved.value = true
+      await router.replace('/walks/' + response.walk.id)
+    }
   } catch (error) {
     plannerError.value = apiErrorMessage(error, 'Your walk could not be saved. Please try again.')
   } finally {
