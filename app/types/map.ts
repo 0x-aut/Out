@@ -11,6 +11,7 @@ export interface MapPoint {
 
 export interface MapPlace {
   id: string
+  placeId?: string | null
   name: string
   category: string | null
   address: string | null
