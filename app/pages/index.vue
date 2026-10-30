@@ -1,5 +1,32 @@
 <script setup lang="ts">
+import { authClient } from '~/lib/auth-client'
+
+type RecommendationItem = {
+  id: string
+  name: string
+  category: string | null
+  address: string | null
+  city: string | null
+  country: string | null
+  imageUrl: string | null
+}
+
+type RecommendationResponse = {
+  status: 'ready' | 'profile_incomplete' | 'no_matches'
+  location: string | null
+  personalized: boolean
+  matchedInterests: string[]
+  items: RecommendationItem[]
+}
+
 const router = useRouter()
+const authSession = authClient.useSession()
+const recommendationItems = ref<RecommendationItem[]>([])
+const recommendationLoading = ref(false)
+const recommendationError = ref('')
+const recommendationStatus = ref<'idle' | 'loading' | RecommendationResponse['status']>('idle')
+const recommendationLocation = ref<string | null>(null)
+let recommendationRequestId = 0
 const vibe = ref('')
 const popularTab = ref<'spots' | 'walks'>('spots')
 
@@ -22,6 +49,41 @@ const popularWalks = [
   { id: 'sunset', title: 'Sunset over the rooftops', duration: '1 h 45', stops: '5 stops', distance: 'Saved by 21 people', image: 'https://images.unsplash.com/photo-1506377585622-bedcbb027afc?w=800&h=900&fit=crop', position: 'center 52%' },
   { id: 'tiles', title: 'Tiles, tarts & tiny streets', duration: '55 min', stops: '3 stops', distance: 'Karina and 8 others tried this', image: 'https://images.unsplash.com/photo-1548707309-dcebeab9ea9b?w=800&h=900&fit=crop', position: 'center 54%' }
 ]
+
+async function loadRecommendations() {
+  const requestId = ++recommendationRequestId
+  recommendationLoading.value = true
+  recommendationError.value = ''
+  recommendationStatus.value = 'loading'
+
+  try {
+    const response = await $fetch<RecommendationResponse>('/api/recommendations')
+    if (requestId !== recommendationRequestId) return
+    recommendationItems.value = response.items
+    recommendationLocation.value = response.location
+    recommendationStatus.value = response.status
+  } catch {
+    if (requestId !== recommendationRequestId) return
+    recommendationItems.value = []
+    recommendationError.value = 'Your picks could not load. Please try again.'
+    recommendationStatus.value = 'idle'
+  } finally {
+    if (requestId === recommendationRequestId) recommendationLoading.value = false
+  }
+}
+
+watch(() => authSession.value.data?.user?.id, userId => {
+  if (userId) {
+    void loadRecommendations()
+  } else {
+    recommendationRequestId++
+    recommendationItems.value = []
+    recommendationError.value = ''
+    recommendationLocation.value = null
+    recommendationStatus.value = 'idle'
+    recommendationLoading.value = false
+  }
+}, { immediate: true })
 
 function startFromVibe() {
   const query = vibe.value.trim()
@@ -70,6 +132,40 @@ function openSpot(id: string) {
           </div>
           <div class="hide-scrollbar -mx-4 flex snap-x snap-mandatory gap-2.5 overflow-x-auto scroll-pl-6 px-6 pb-2 sm:mx-0 sm:px-2">
             <WalkCard v-for="walk in walks" :key="walk.id" :walk="walk" @select="openWalk" />
+          </div>
+        </section>
+
+        <section v-if="authSession.data?.user" aria-labelledby="for-you-heading" class="min-w-0 lg:col-span-2">
+          <div class="mb-3 flex items-center justify-between gap-3">
+            <div>
+              <h2 id="for-you-heading" class="unmodified-font-san text-[15px] font-bold tracking-[-0.04em] text-[#202027]">Picked for your taste</h2>
+              <p class="mt-0.5 text-[10px] text-[#777780]">
+                {{ recommendationLocation ? `Around ${recommendationLocation}` : 'Based on the things you enjoy' }}
+              </p>
+            </div>
+            <NuxtLink to="/profile" class="flex h-8 shrink-0 items-center gap-1 rounded-full px-2 text-[10px] font-semibold text-[#555560] transition hover:bg-white/70">
+              Tune your taste <span aria-hidden="true">›</span>
+            </NuxtLink>
+          </div>
+
+          <div v-if="recommendationLoading" class="flex gap-2.5 overflow-hidden">
+            <div v-for="item in 3" :key="item" class="h-[218px] min-w-[238px] animate-pulse rounded-[20px] border border-white/90 bg-white/70 sm:min-w-[250px]"></div>
+          </div>
+          <div v-else-if="recommendationError" class="rounded-[20px] border border-white/90 bg-white/80 px-4 py-4 shadow-[0_4px_14px_rgba(28,28,33,0.04)]">
+            <p class="text-[11px] text-[#686873]">{{ recommendationError }}</p>
+            <button type="button" class="mt-2 text-[10px] font-semibold text-[#24242a] underline underline-offset-2" @click="loadRecommendations">Try again</button>
+          </div>
+          <div v-else-if="recommendationItems.length" class="hide-scrollbar -mx-4 flex snap-x snap-mandatory gap-2.5 overflow-x-auto px-4 pb-2 sm:mx-0 sm:px-0">
+            <RecommendationCard v-for="place in recommendationItems" :key="place.id" :place="place" />
+          </div>
+          <div v-else class="rounded-[20px] border border-white/90 bg-white/75 px-4 py-4 shadow-[0_4px_14px_rgba(28,28,33,0.04)]">
+            <p class="text-[11px] font-semibold text-[#34343c]">
+              {{ recommendationStatus === 'profile_incomplete' ? 'A little more about you will make these picks better.' : 'We could not find a match just yet.' }}
+            </p>
+            <p class="mt-1 text-[10px] leading-relaxed text-[#777780]">
+              {{ recommendationStatus === 'profile_incomplete' ? 'Add a few interests and your home base to get places shaped around your taste.' : 'Try adding a few more interests or checking your home base.' }}
+            </p>
+            <NuxtLink to="/profile" class="mt-2 inline-flex text-[10px] font-semibold text-[#24242a] underline underline-offset-2">Update your profile</NuxtLink>
           </div>
         </section>
 
