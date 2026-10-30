@@ -83,10 +83,12 @@ function endDrag() {
           <button v-for="option in options" :key="option" type="button" :aria-pressed="props.duration === option" class="h-10 min-w-[57px] rounded-full px-4 text-[11px] font-semibold transition active:scale-[0.98]" :class="props.duration === option ? 'bg-gradient-to-b from-[#303036] to-[#151519] text-white shadow-[0_4px_10px_rgba(22,22,27,0.20)]' : 'border border-[#e9e9ed] bg-white text-[#25252b] hover:bg-[#f8f8fa]'" @click="emit('update:duration', option)">{{ option }}</button>
         </div>
       </div>
-      <ActionButton block class="mt-5 !h-12 !rounded-full" @click="emit('build')">
+      <div class="mx-[-8px] mt-5 sm:mx-[-12px]">
+        <ActionButton block class="!h-12 !w-full !rounded-full" @click="emit('build')">
         <Check v-if="props.built" :size="13" />
         {{ props.built ? props.duration + ' walk is ready' : 'Build my ' + props.duration + ' walk' }}
-      </ActionButton>
+        </ActionButton>
+      </div>
       <p v-if="props.built" role="status" class="mt-2.5 text-[10px] font-medium text-[#4d9877]">Your walk draft is ready.</p>
     </section>
   </div>
