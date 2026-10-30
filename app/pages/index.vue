@@ -44,7 +44,7 @@ function openSpot(id: string) {
         <div class="min-w-0">
           <h1 class="unmodified-font-san text-[20px] font-bold leading-tight tracking-[-0.055em] text-[#19191e] sm:text-[22px]">Alfama? Say less</h1>
         </div>
-        <NuxtLink to="/signin" aria-label="Your profile" class="h-9 w-9 shrink-0 overflow-hidden rounded-full border-2 border-white shadow-[0_2px_8px_rgba(20,20,28,0.14)]">
+        <NuxtLink to="/profile" aria-label="Your profile" class="h-9 w-9 shrink-0 overflow-hidden rounded-full border-2 border-white shadow-[0_2px_8px_rgba(20,20,28,0.14)]">
           <img src="https://i.pravatar.cc/100?img=12" alt="Profile" class="h-full w-full object-cover" />
         </NuxtLink>
       </header>
