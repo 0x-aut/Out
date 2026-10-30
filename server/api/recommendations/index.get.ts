@@ -18,9 +18,41 @@ export default defineEventHandler(async (event) => {
   ])
 
   const profile = profileResult.rows[0] as { homeBase?: string; travelStyle?: string } | undefined
-  const interests = interestsResult.rows as Array<{ name: string; category: 'places' | 'vibes' | 'activities' }>
-  const homeBase = profile?.homeBase?.trim() || ''
-  const travelStyle = profile?.travelStyle || 'Curious wanderer'
+  const legacy = user as typeof user & {
+    homeBase?: string
+    travelStyle?: string
+    interests?: string
+  }
+  let interests = interestsResult.rows as Array<{ name: string; category: 'places' | 'vibes' | 'activities' }>
+
+  // Preserve recommendations for accounts created before profile data moved into out-data.
+  if (!profile && !interests.length && legacy.interests) {
+    const placeInterests = new Set([
+      'Hidden gems', 'Local neighbourhoods', 'Museums & galleries', 'Markets', 'Bookshops',
+      'Parks & gardens', 'Architecture', 'Beaches', 'Historic places', 'Independent shops'
+    ])
+    const vibeInterests = new Set([
+      'Slow & peaceful', 'Creative & artsy', 'Lively & social', 'Romantic', 'Off the beaten path',
+      'Outdoorsy', 'Cosy & intimate', 'Late-night energy', 'Design-led', 'Local & authentic'
+    ])
+
+    try {
+      const previousInterests: unknown = JSON.parse(legacy.interests)
+      if (Array.isArray(previousInterests)) {
+        interests = previousInterests
+          .filter((name): name is string => typeof name === 'string' && name.trim().length > 0)
+          .map(name => ({
+            name,
+            category: placeInterests.has(name) ? 'places' : vibeInterests.has(name) ? 'vibes' : 'activities'
+          }))
+      }
+    } catch {
+      interests = []
+    }
+  }
+
+  const homeBase = profile?.homeBase?.trim() || legacy.homeBase?.trim() || ''
+  const travelStyle = profile?.travelStyle || legacy.travelStyle || 'Curious wanderer'
 
   if (!homeBase && !interests.length && travelStyle === 'Curious wanderer') {
     return {
