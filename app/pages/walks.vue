@@ -35,6 +35,8 @@ let requestId = 0
 
 useHead({ title: 'Your walks — Out' })
 
+const tabs = [{ id: 'all', label: 'All walks' }, { id: 'mine', label: 'Created by me' }, { id: 'saved', label: 'Saved' }] as const
+
 const savedWalks = computed(() => {
   const ids = new Set(savedItems.value.filter(item => item.itemType === 'walk').map(item => item.item.id))
   return walks.value.filter(walk => ids.has(walk.id))
@@ -139,7 +141,7 @@ function openWalk(id: string) {
       </section>
       <template v-else>
         <div class="mb-5 flex items-center gap-1.5 rounded-full border border-white/90 bg-white/65 p-1" role="tablist" aria-label="Walk library">
-          <button v-for="tab in ([{ id: 'all', label: 'All walks' }, { id: 'mine', label: 'Created by me' }, { id: 'saved', label: 'Saved' }] as const)" :key="tab.id" type="button" role="tab" :aria-selected="activeTab === tab.id" class="h-8 flex-1 rounded-full px-3 text-[10px] font-semibold transition" :class="activeTab === tab.id ? 'bg-[#19191e] text-white shadow-sm' : 'text-[#686873] hover:text-[#222228]'" @click="activeTab = tab.id">{{ tab.label }}</button>
+          <button v-for="tab in tabs" :key="tab.id" type="button" role="tab" :aria-selected="activeTab === tab.id" class="h-8 flex-1 rounded-full px-3 text-[10px] font-semibold transition" :class="activeTab === tab.id ? 'bg-[#19191e] text-white shadow-sm' : 'text-[#686873] hover:text-[#222228]'" @click="activeTab = tab.id">{{ tab.label }}</button>
         </div>
 
         <div v-if="error" role="alert" class="mb-4 rounded-[16px] bg-[#fff5f4] px-4 py-3 text-[10px] text-[#a34b46]">{{ error }}</div>
