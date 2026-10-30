@@ -280,13 +280,13 @@ async function saveWalk() {
             durationMinutes: null
           },
           ...selectedPlaces.value.map(place => ({
-          placeId: place.id,
-          name: place.name,
-          address: place.address,
-          latitude: place.latitude,
-          longitude: place.longitude,
-          notes: null,
-          durationMinutes: null
+            placeId: place.id,
+            name: place.name,
+            address: place.address,
+            latitude: place.latitude,
+            longitude: place.longitude,
+            notes: null,
+            durationMinutes: null
           }))
         ]
       }
