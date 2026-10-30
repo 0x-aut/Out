@@ -302,7 +302,6 @@ onBeforeUnmount(() => {
   color: #25252c;
   cursor: pointer;
   text-align: left;
-  transform: translateY(-1px);
 }
 
 .out-map-marker__dot {
