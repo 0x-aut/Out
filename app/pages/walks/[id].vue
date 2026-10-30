@@ -26,6 +26,9 @@ type WalkDetail = {
   isOwner: boolean
   stops: WalkStop[]
 }
+type DirectionsResponse = {
+  route: { distance: number; duration: number }
+}
 type SavedItem = {
   id: string
   itemType: 'place' | 'walk'
@@ -97,6 +100,9 @@ watch(() => [authSession.value.data?.user?.id, walkId.value] as const, ([userId,
     void loadWalk()
   } else if (!authSession.value.isPending) {
     loading.value = false
+    walk.value = null
+    stops.value = []
+    savedItem.value = null
     error.value = 'Sign in to view this walk.'
   }
 }, { immediate: true })
@@ -130,13 +136,44 @@ async function saveChanges() {
   error.value = ''
   notice.value = ''
   try {
+    const originalOrder = walk.value.stops.map(stop => stop.id).join('|')
+    const updatedOrder = stops.value.map(stop => stop.id).join('|')
+    const routeChanged = originalOrder !== updatedOrder
+    let durationMinutes = walk.value.durationMinutes
+    let distanceMeters = walk.value.distanceMeters
+    let routeStatsRefreshed = true
+
+    if (routeChanged) {
+      durationMinutes = null
+      distanceMeters = null
+      const coordinates = stops.value.flatMap(stop =>
+        typeof stop.latitude === 'number' && typeof stop.longitude === 'number'
+          ? [{ latitude: stop.latitude, longitude: stop.longitude }]
+          : []
+      )
+      if (coordinates.length >= 2) {
+        try {
+          const routeResponse = await $fetch<DirectionsResponse>('/api/mapbox/directions', {
+            method: 'POST',
+            body: { coordinates }
+          })
+          durationMinutes = Math.max(1, Math.ceil(routeResponse.route.duration / 60))
+          distanceMeters = Math.max(1, Math.round(routeResponse.route.distance))
+        } catch {
+          routeStatsRefreshed = false
+        }
+      } else {
+        routeStatsRefreshed = false
+      }
+    }
+
     const response = await $fetch<{ walk: WalkDetail }>('/api/walks/' + walkId.value, {
       method: 'PUT',
       body: {
         title: title.value.trim(),
         description: description.value.trim() || null,
-        durationMinutes: walk.value.durationMinutes,
-        distanceMeters: walk.value.distanceMeters,
+        durationMinutes,
+        distanceMeters,
         visibility: visibility.value,
         stops: stops.value.map(stop => ({
           placeId: stop.placeId,
@@ -151,7 +188,9 @@ async function saveChanges() {
     })
     copyWalk(response.walk)
     editing.value = false
-    notice.value = 'Your walk has been updated.'
+    notice.value = routeChanged && !routeStatsRefreshed
+      ? 'Your walk was updated. Route distance and time need to be recalculated on the map.'
+      : 'Your walk has been updated.'
   } catch (cause) {
     const value = cause as { data?: { statusMessage?: string }; statusMessage?: string }
     error.value = value?.data?.statusMessage || 'Your walk could not be updated.'
