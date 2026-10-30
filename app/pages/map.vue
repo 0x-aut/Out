@@ -63,13 +63,6 @@ const selectedPlaces = computed(() =>
     .filter((place): place is MapPlace => Boolean(place))
 )
 
-const canBuildWalk = computed(() =>
-  Boolean(userLocation.value) &&
-  selectedPlaces.value.length > 0 &&
-  selectedPlaces.value.length <= 24 &&
-  !routeBuilding.value
-)
-
 function apiErrorMessage(error: unknown, fallback: string) {
   const value = error as { data?: { statusMessage?: string }; statusMessage?: string }
   return value?.data?.statusMessage || value?.statusMessage || fallback
@@ -276,7 +269,17 @@ async function saveWalk() {
         durationMinutes: Math.max(1, Math.ceil(routeDuration.value / 60)),
         distanceMeters: Math.max(1, Math.round(routeDistance.value)),
         visibility: 'private',
-        stops: selectedPlaces.value.map(place => ({
+        stops: [
+          {
+            placeId: null,
+            name: 'Starting location',
+            address: null,
+            latitude: userLocation.value!.latitude,
+            longitude: userLocation.value!.longitude,
+            notes: null,
+            durationMinutes: null
+          },
+          ...selectedPlaces.value.map(place => ({
           placeId: place.id,
           name: place.name,
           address: place.address,
@@ -284,7 +287,8 @@ async function saveWalk() {
           longitude: place.longitude,
           notes: null,
           durationMinutes: null
-        }))
+          }))
+        ]
       }
     })
 
@@ -295,12 +299,6 @@ async function saveWalk() {
   } finally {
     walkSaving.value = false
   }
-}
-
-function formatDistance(meters: number) {
-  return meters >= 1000
-    ? (meters / 1000).toFixed(1) + ' km'
-    : Math.round(meters) + ' m'
 }
 
 function goBack() {
