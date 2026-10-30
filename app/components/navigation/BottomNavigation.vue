@@ -17,7 +17,9 @@ defineProps<{
       <NuxtLink
         to="/"
         class="flex h-9 min-w-[84px] items-center justify-center gap-2 rounded-full px-3 text-[10px] font-medium transition"
-        :class="active === 'explore' ? 'bg-[#19191e] text-white shadow-sm' : 'text-[#55555d] hover:bg-[#f4f4f7]'"
+        :class="active === 'explore'
+          ? 'bg-gradient-to-b from-[#303036] to-[#151519] text-white shadow-[0_4px_10px_rgba(22,22,27,0.20)]'
+          : 'text-[#55555d] hover:bg-[#f4f4f7]'"
       >
         <Compass :size="15" :stroke-width="1.9" />
         Explore
@@ -25,7 +27,9 @@ defineProps<{
       <NuxtLink
         to="/map"
         class="flex h-9 min-w-[66px] items-center justify-center gap-2 rounded-full px-3 text-[10px] font-medium transition"
-        :class="active === 'map' ? 'bg-[#19191e] text-white shadow-sm' : 'text-[#55555d] hover:bg-[#f4f4f7]'"
+        :class="active === 'map'
+          ? 'bg-gradient-to-b from-[#303036] to-[#151519] text-white shadow-[0_4px_10px_rgba(22,22,27,0.20)]'
+          : 'text-[#55555d] hover:bg-[#f4f4f7]'"
       >
         <Map :size="15" :stroke-width="1.9" />
         Map
