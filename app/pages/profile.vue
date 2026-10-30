@@ -95,7 +95,7 @@ async function signOut() {
         <div class="mb-5 flex items-center gap-3 rounded-[24px] border border-white/90 bg-white/75 p-4 shadow-[0_8px_24px_rgba(39,40,70,0.04)]">
           <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#e9eaff] text-[#5658a6]"><span class="text-lg font-bold">{{ (name || session.data.user.name || 'O').charAt(0).toUpperCase() }}</span></div>
           <div class="min-w-0 flex-1">
-            <p class="truncate text-sm font-bold text-[#25252c]">{{ name || session.user.name }}</p>
+            <p class="truncate text-sm font-bold text-[#25252c]">{{ name || session.data.user.name }}</p>
             <p class="truncate text-[11px] text-[#858590]">{{ session.data.user.email }}</p>
           </div>
           <span class="rounded-full bg-[#eeeffb] px-3 py-1.5 text-[9px] font-bold text-[#6668ad]">Out member</span>
