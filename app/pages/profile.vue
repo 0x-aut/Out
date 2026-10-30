@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import { ArrowLeft, Check, Compass, LogOut, MapPin, Plus, Save, Sparkles } from '@lucide/vue'
+import { ArrowLeft, Check, Compass, LogOut, MapPin, Save, Sparkles } from '@lucide/vue'
 import { authClient } from '~/lib/auth-client'
 
 useHead({ title: 'Your profile — Out' })
 
-const { data: session, isPending } = authClient.useSession()
+const session = authClient.useSession()
 const name = ref('')
 const bio = ref('')
 const homeBase = ref('')
@@ -23,7 +23,7 @@ const interestGroups = [
 const styles = ['Curious wanderer', 'Slow traveller', 'Culture seeker', 'Food explorer', 'Adventure first', 'Night owl', 'A little bit of everything']
 
 watchEffect(() => {
-  const user = session.value?.user
+  const user = session.value.data?.user
   if (!user) return
   name.value = user.name || ''
   bio.value = String((user as Record<string, unknown>).bio || '')
@@ -74,11 +74,11 @@ async function signOut() {
     <div class="mx-auto max-w-[760px]">
       <header class="mb-7 flex items-center justify-between gap-3">
         <NuxtLink to="/" class="inline-flex items-center gap-2 text-xs font-semibold text-[#555560] hover:text-[#19191e]"><ArrowLeft :size="15" /> Back to Explore</NuxtLink>
-        <button v-if="session" type="button" class="inline-flex h-9 items-center gap-2 rounded-full border border-white bg-white/70 px-3 text-[10px] font-semibold text-[#686873] transition hover:bg-white" @click="signOut"><LogOut :size="13" /> Sign out</button>
+        <button v-if="session.data" type="button" class="inline-flex h-9 items-center gap-2 rounded-full border border-white bg-white/70 px-3 text-[10px] font-semibold text-[#686873] transition hover:bg-white" @click="signOut"><LogOut :size="13" /> Sign out</button>
       </header>
 
-      <div v-if="isPending" class="rounded-[28px] bg-white/80 p-8 text-center text-sm text-[#777783]">Loading your profile…</div>
-      <section v-else-if="!session" class="rounded-[28px] border border-white bg-white/85 p-8 text-center shadow-[0_18px_60px_rgba(39,40,70,0.07)]">
+      <div v-if="session.isPending" class="rounded-[28px] bg-white/80 p-8 text-center text-sm text-[#777783]">Loading your profile…</div>
+      <section v-else-if="!session.data" class="rounded-[28px] border border-white bg-white/85 p-8 text-center shadow-[0_18px_60px_rgba(39,40,70,0.07)]">
         <Compass :size="28" class="mx-auto text-[#7779c9]" />
         <h1 class="mt-3 text-xl font-bold tracking-tight">Your Out profile</h1>
         <p class="mt-2 text-sm text-[#777783]">Sign in to save your interests and make every discovery feel more like you.</p>
@@ -93,10 +93,10 @@ async function signOut() {
         </div>
 
         <div class="mb-5 flex items-center gap-3 rounded-[24px] border border-white/90 bg-white/75 p-4 shadow-[0_8px_24px_rgba(39,40,70,0.04)]">
-          <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#e9eaff] text-[#5658a6]"><span class="text-lg font-bold">{{ (name || session.user.name || 'O').charAt(0).toUpperCase() }}</span></div>
+          <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#e9eaff] text-[#5658a6]"><span class="text-lg font-bold">{{ (name || session.data.user.name || 'O').charAt(0).toUpperCase() }}</span></div>
           <div class="min-w-0 flex-1">
-            <p class="truncate text-sm font-bold text-[#25252c]">{{ name || session.user.name }}</p>
-            <p class="truncate text-[11px] text-[#858590]">{{ session.user.email }}</p>
+            <p class="truncate text-sm font-bold text-[#25252c]">{{ name || session.data.user.name }}</p>
+            <p class="truncate text-[11px] text-[#858590]">{{ session.data.user.email }}</p>
           </div>
           <span class="rounded-full bg-[#eeeffb] px-3 py-1.5 text-[9px] font-bold text-[#6668ad]">Out member</span>
         </div>
