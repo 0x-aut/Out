@@ -58,6 +58,7 @@ useHead({ title: 'Walk — Out' })
 const coverImage = computed(() => walk.value?.stops.find(stop => stop.imageUrl)?.imageUrl || null)
 const isOwner = computed(() => Boolean(walk.value?.isOwner))
 const saved = computed(() => Boolean(savedItem.value))
+const destinationCount = computed(() => walk.value?.stops.filter(stop => stop.placeId).length ?? walk.value?.stops.length ?? 0)
 
 function formatDuration(minutes: number | null) {
   if (!minutes) return 'Time not set'
@@ -266,7 +267,7 @@ function openInMap() {
             <span class="absolute left-4 top-4 rounded-full bg-white/90 px-3 py-1.5 text-[9px] font-semibold text-[#292930]">{{ walk.visibility === 'public' ? 'Public walk' : 'Private walk' }}</span>
             <div class="absolute inset-x-5 bottom-4">
               <h1 class="unmodified-font-san text-[27px] font-bold leading-tight tracking-[-0.06em] text-white sm:text-[34px]">{{ walk.title }}</h1>
-              <p class="mt-1 text-[10px] font-medium text-white/85">{{ walk.stops.length }} {{ walk.stops.length === 1 ? 'stop' : 'stops' }}<span v-if="walk.durationMinutes"> · {{ formatDuration(walk.durationMinutes) }}</span><span v-if="formatDistance(walk.distanceMeters)"> · {{ formatDistance(walk.distanceMeters) }}</span></p>
+              <p class="mt-1 text-[10px] font-medium text-white/85">{{ destinationCount }} {{ destinationCount === 1 ? 'stop' : 'stops' }}<span v-if="walk.durationMinutes"> · {{ formatDuration(walk.durationMinutes) }}</span><span v-if="formatDistance(walk.distanceMeters)"> · {{ formatDistance(walk.distanceMeters) }}</span></p>
             </div>
           </div>
 
