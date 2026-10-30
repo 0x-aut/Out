@@ -13,29 +13,44 @@ const selected = ref<string[]>([])
 const saving = ref(false)
 const saved = ref(false)
 const error = ref('')
+const profileLoading = ref(true)
+const profileReady = ref(false)
 
 const interestGroups = [
-  { title: 'Places you gravitate towards', hint: 'The places you want to discover', items: ['Hidden gems', 'Local neighbourhoods', 'Museums & galleries', 'Markets', 'Bookshops', 'Parks & gardens', 'Architecture', 'Beaches', 'Historic places', 'Independent shops'] },
-  { title: 'Your kind of vibe', hint: 'The atmosphere that makes a place feel right', items: ['Slow & peaceful', 'Creative & artsy', 'Lively & social', 'Romantic', 'Off the beaten path', 'Outdoorsy', 'Cosy & intimate', 'Late-night energy', 'Design-led', 'Local & authentic'] },
-  { title: 'Things you love doing', hint: 'Experiences worth leaving home for', items: ['Coffee & bakeries', 'Street food', 'Fine dining', 'Live music', 'Cocktail bars', 'Photography', 'Walking tours', 'Vintage shopping', 'Festivals & events', 'Food markets', 'Nature trails', 'Street art'] }
+  { category: 'places', title: 'Places you gravitate towards', hint: 'The places you want to discover', items: ['Hidden gems', 'Local neighbourhoods', 'Museums & galleries', 'Markets', 'Bookshops', 'Parks & gardens', 'Architecture', 'Beaches', 'Historic places', 'Independent shops'] },
+  { category: 'vibes', title: 'Your kind of vibe', hint: 'The atmosphere that makes a place feel right', items: ['Slow & peaceful', 'Creative & artsy', 'Lively & social', 'Romantic', 'Off the beaten path', 'Outdoorsy', 'Cosy & intimate', 'Late-night energy', 'Design-led', 'Local & authentic'] },
+  { category: 'activities', title: 'Things you love doing', hint: 'Experiences worth leaving home for', items: ['Coffee & bakeries', 'Street food', 'Fine dining', 'Live music', 'Cocktail bars', 'Photography', 'Walking tours', 'Vintage shopping', 'Festivals & events', 'Food markets', 'Nature trails', 'Street art'] }
 ]
 
 const styles = ['Curious wanderer', 'Slow traveller', 'Culture seeker', 'Food explorer', 'Adventure first', 'Night owl', 'A little bit of everything']
 
-watchEffect(() => {
-  const user = session.value.data?.user
-  if (!user) return
-  name.value = user.name || ''
-  bio.value = String((user as Record<string, unknown>).bio || '')
-  homeBase.value = String((user as Record<string, unknown>).homeBase || '')
-  travelStyle.value = String((user as Record<string, unknown>).travelStyle || 'Curious wanderer')
-  try {
-    const interests = JSON.parse(String((user as Record<string, unknown>).interests || '[]'))
-    selected.value = Array.isArray(interests) ? interests : []
-  } catch {
-    selected.value = []
+watch(() => session.value.data?.user?.id, async (userId) => {
+  if (!userId) {
+    profileLoading.value = false
+    profileReady.value = false
+    return
   }
-})
+
+  profileLoading.value = true
+  profileReady.value = false
+  name.value = session.value.data?.user?.name || ''
+
+  try {
+    const data = await $fetch<{
+      profile: { bio: string; homeBase: string; travelStyle: string }
+      interests: Array<{ name: string; category: string }>
+    }>('/api/profile')
+    bio.value = data.profile.bio
+    homeBase.value = data.profile.homeBase
+    travelStyle.value = data.profile.travelStyle
+    selected.value = data.interests.map(interest => interest.name)
+    profileReady.value = true
+  } catch {
+    error.value = 'Your profile data could not be loaded. Please refresh and try again.'
+  } finally {
+    profileLoading.value = false
+  }
+}, { immediate: true })
 
 function toggleInterest(interest: string) {
   selected.value = selected.value.includes(interest)
@@ -48,19 +63,39 @@ async function saveProfile() {
   error.value = ''
   saved.value = false
   saving.value = true
-  const result = await authClient.updateUser({
-    name: name.value.trim(),
-    bio: bio.value.trim(),
-    homeBase: homeBase.value.trim(),
-    travelStyle: travelStyle.value,
-    interests: JSON.stringify(selected.value)
-  })
-  saving.value = false
-  if (result.error) {
-    error.value = result.error.message || 'Your profile could not be saved.'
-    return
+  let nameSaved = false
+
+  try {
+    const nameResult = await authClient.updateUser({ name: name.value.trim() })
+    if (nameResult.error) throw new Error(nameResult.error.message || 'Your name could not be saved.')
+    nameSaved = true
+
+    const interests = interestGroups.flatMap(group =>
+      group.items
+        .filter(interest => selected.value.includes(interest))
+        .map(name => ({ name, category: group.category }))
+    )
+
+    await $fetch('/api/profile', {
+      method: 'PUT',
+      body: {
+        profile: {
+          bio: bio.value.trim(),
+          homeBase: homeBase.value.trim(),
+          travelStyle: travelStyle.value
+        },
+        interests
+      }
+    })
+
+    saved.value = true
+  } catch {
+    error.value = nameSaved
+      ? 'Your name was saved, but the rest of your profile could not be saved. Please try again.'
+      : 'Your profile could not be saved. Please try again.'
+  } finally {
+    saving.value = false
   }
-  saved.value = true
 }
 
 async function signOut() {
@@ -127,7 +162,7 @@ async function signOut() {
           <p v-if="error" role="alert" class="rounded-xl bg-red-50 px-4 py-3 text-xs text-red-600">{{ error }}</p>
           <div class="flex flex-col items-stretch justify-between gap-3 sm:flex-row sm:items-center">
             <p class="text-[10px] text-[#898994]">Your taste can always change as you explore.</p>
-            <button type="submit" :disabled="saving" class="inline-flex h-12 items-center justify-center gap-2 rounded-full bg-gradient-to-b from-[#303036] to-[#151519] px-7 text-xs font-semibold text-white shadow-[0_5px_14px_rgba(22,22,27,0.18)] transition hover:brightness-110 disabled:opacity-60"><Check v-if="saved" :size="15" /><Save v-else :size="15" />{{ saving ? 'Saving…' : saved ? 'Saved' : 'Save profile' }}</button>
+            <button type="submit" :disabled="saving || !profileReady" class="inline-flex h-12 items-center justify-center gap-2 rounded-full bg-gradient-to-b from-[#303036] to-[#151519] px-7 text-xs font-semibold text-white shadow-[0_5px_14px_rgba(22,22,27,0.18)] transition hover:brightness-110 disabled:opacity-60"><Check v-if="saved" :size="15" /><Save v-else :size="15" />{{ saving ? 'Saving…' : profileLoading ? 'Loading profile…' : !profileReady ? 'Profile unavailable' : saved ? 'Saved' : 'Save profile' }}</button>
           </div>
         </form>
       </template>

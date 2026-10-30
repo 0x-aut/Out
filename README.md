@@ -1,8 +1,13 @@
 # Out
 
-## Authentication setup
+## Environment
 
-Out uses Better Auth with PostgreSQL. The auth server appends `out-auth` to the path in `DATABASE_URL`, so keep the connection string pointed at the server and ending in `/` (do not include a database name).
+Out uses one PostgreSQL server URL and two separate databases:
+
+- `out-auth` stores Better Auth users, sessions, and authentication data.
+- `out-data` stores application profiles, interests, places, walks, and saved items.
+
+Set `DATABASE_URL` to the PostgreSQL server URL with no database name (it should end in `/`). The server code selects the database name. Do not point it at either database directly.
 
 Required environment variables:
 
@@ -10,10 +15,40 @@ Required environment variables:
 - `BETTER_AUTH_SECRET`: a high-entropy secret of at least 32 characters.
 - `BETTER_AUTH_URL`: the public origin of this Out deployment (for local development, `http://localhost:3000`).
 
-Install dependencies with `pnpm install`, then create Better Auth's tables in the `out-auth` database:
+## Database setup
+
+Install dependencies with `pnpm install`.
+
+Create Better Auth's tables in `out-auth` using the Better Auth CLI:
 
 ```sh
 pnpm dlx auth@latest migrate
 ```
 
-The profile stores the user's bio, home base, travel style, and selected discovery interests as Better Auth user fields. Registration is at `/signup`, sign-in is at `/signin`, and the profile is at `/profile`.
+Create the application tables in `out-data` using the versioned SQL migration runner:
+
+```sh
+pnpm db:migrate
+```
+
+The migration runner is safe to execute more than once. It acquires a PostgreSQL advisory lock, records applied migrations and checks their checksums. It fails rather than silently accepting edits to an already-applied migration. The `out-data` database must already exist.
+
+## Application data API
+
+All application data routes require a valid Better Auth session. User-owned records are scoped to the authenticated user on the server; the API never accepts a user ID from the request body.
+
+- `GET /api/profile`: read the current user's profile and categorized interests.
+- `PUT /api/profile`: atomically save profile fields and replace the user's interest selection. Body: `{ profile: { bio, homeBase, travelStyle }, interests: [{ name, category }] }`. Categories are `places`, `vibes`, and `activities`.
+- `GET /api/places?q=&limit=&offset=`: search the shared place catalog.
+- `POST /api/places`: add or refresh a place. A supplied `source` + `sourceId` identifies a provider record; an existing record created by another user is returned unchanged.
+- `GET /api/places/:id`: read a place.
+- `GET /api/walks?q=&limit=&offset=`: list the current user's walks and public walks.
+- `POST /api/walks`: create a walk and its ordered stops in one transaction.
+- `GET /api/walks/:id`: read an owned or public walk with its stops.
+- `PUT /api/walks/:id`: replace an owned walk and its stops in one transaction.
+- `DELETE /api/walks/:id`: delete an owned walk.
+- `GET /api/saved-items`: list the current user's saved places and walks.
+- `POST /api/saved-items`: save a place or walk using `{ itemType, itemId }`.
+- `DELETE /api/saved-items/:id`: remove one of the current user's saved items.
+
+Places are shared catalog records. Walks, profiles, interests and saved items are user-scoped. Walk visibility defaults to private.
