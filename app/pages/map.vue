@@ -59,6 +59,7 @@ let recommendationRequestId = 0
 let mapTargetRequestId = 0
 let recommendationsReady = false
 let recommendationsPromise: Promise<void> | null = null
+let activePlaceId = ''
 
 useHead({ title: 'Map — Out' })
 
@@ -299,19 +300,25 @@ async function syncMapTarget() {
   const walkId = routeQuery.query.walk
   const placeId = routeQuery.query.place
   if (typeof walkId === 'string') {
+    activePlaceId = ''
     await loadExistingWalk(walkId)
     return
   }
 
-  if (activeWalk.value) {
+  if (activeWalk.value || activePlaceId !== (typeof placeId === 'string' ? placeId : '')) {
     activeWalk.value = null
+    activePlaceId = ''
     places.value = [...recommendedPlaces.value]
     selectedIds.value = []
     userLocation.value = null
     clearRoute()
   }
-  if (typeof placeId === 'string') await loadPlace(placeId)
-  else if (!places.value.length && recommendedPlaces.value.length) places.value = [...recommendedPlaces.value]
+  if (typeof placeId === 'string' && activePlaceId !== placeId) {
+    activePlaceId = placeId
+    await loadPlace(placeId)
+  } else if (!placeId && !places.value.length && recommendedPlaces.value.length) {
+    places.value = [...recommendedPlaces.value]
+  }
 }
 
 watch(
