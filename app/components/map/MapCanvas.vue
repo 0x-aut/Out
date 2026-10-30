@@ -30,6 +30,8 @@ let map: MapboxMap | null = null
 let mapbox: typeof import('mapbox-gl/esm') | null = null
 let geolocateControl: MapboxGeolocateControl | null = null
 let markers: MapboxMarker[] = []
+let markerById = new Map<string, MapboxMarker>()
+let pendingFocusId: string | null = null
 let mapLoaded = false
 let fittedInitialPlaces = false
 let hasLocatedUser = false
@@ -59,6 +61,7 @@ function syncMarkers() {
 
   markers.forEach(marker => marker.remove())
   markers = []
+  markerById.clear()
 
   for (const place of validPlaces()) {
     const selected = props.selectedIds.includes(place.id)
@@ -75,11 +78,11 @@ function syncMarkers() {
     element.append(dot, label)
     element.addEventListener('click', () => emit('select', place))
 
-    markers.push(
-      new mapbox.Marker({ element, anchor: 'bottom' })
-        .setLngLat([place.longitude, place.latitude])
-        .addTo(map)
-    )
+    const marker = new mapbox.Marker({ element, anchor: 'bottom' })
+      .setLngLat([place.longitude, place.latitude])
+      .addTo(map)
+    markers.push(marker)
+    markerById.set(place.id, marker)
   }
 }
 
@@ -134,6 +137,15 @@ function syncRoute() {
   )
 }
 
+function focusPlace(id: string) {
+  pendingFocusId = id
+  if (!map || !mapLoaded) return
+  const place = validPlaces().find(item => item.id === id)
+  if (!place) return
+  map.flyTo({ center: [place.longitude, place.latitude], zoom: 15, duration: 850 })
+  pendingFocusId = null
+}
+
 function locateUser() {
   if (!geolocateControl) {
     emit('locationError', 'The map is still loading. Please try again in a moment.')
@@ -143,12 +155,13 @@ function locateUser() {
   geolocateControl.trigger()
 }
 
-defineExpose({ locateUser })
+defineExpose({ locateUser, focusPlace })
 
 watch(() => props.places, () => {
   if (!mapLoaded) return
   syncMarkers()
   fitPlaces()
+  if (pendingFocusId) focusPlace(pendingFocusId)
 }, { deep: true })
 
 watch(() => props.selectedIds, () => {
@@ -246,6 +259,7 @@ onMounted(async () => {
       syncMarkers()
       fitPlaces()
       syncRoute()
+      if (pendingFocusId) focusPlace(pendingFocusId)
     })
 
     map.on('error', event => {
@@ -264,6 +278,7 @@ onMounted(async () => {
 onBeforeUnmount(() => {
   markers.forEach(marker => marker.remove())
   markers = []
+  markerById.clear()
   geolocateControl = null
   map?.remove()
   map = null
