@@ -19,7 +19,7 @@ export default defineEventHandler(async (event) => {
   }
 
   const result = await database.query(
-    'SELECT w.id, w.title, w.description, w.duration_minutes AS "durationMinutes", w.distance_meters AS "distanceMeters", w.visibility, w.created_at AS "createdAt", w.updated_at AS "updatedAt", COUNT(s.id)::int AS "stopCount" FROM walks w LEFT JOIN walk_stops s ON s.walk_id = w.id WHERE (w.user_id = $1 OR w.visibility = \'public\') AND ($2 = \'\' OR w.title ILIKE $3 OR COALESCE(w.description, \'\') ILIKE $3) GROUP BY w.id ORDER BY w.updated_at DESC LIMIT $4 OFFSET $5',
+    'SELECT w.id, w.title, w.description, w.duration_minutes AS "durationMinutes", w.distance_meters AS "distanceMeters", w.visibility, w.created_at AS "createdAt", w.updated_at AS "updatedAt", w.user_id = $1 AS "isOwner", COUNT(s.id)::int AS "stopCount", (SELECT ws.name FROM walk_stops ws WHERE ws.walk_id = w.id ORDER BY ws.position ASC LIMIT 1) AS "firstStopName", (SELECT p.image_url FROM walk_stops ws LEFT JOIN places p ON p.id = ws.place_id WHERE ws.walk_id = w.id ORDER BY ws.position ASC LIMIT 1) AS "imageUrl" FROM walks w LEFT JOIN walk_stops s ON s.walk_id = w.id WHERE (w.user_id = $1 OR w.visibility = \'public\') AND ($2 = \'\' OR w.title ILIKE $3 OR COALESCE(w.description, \'\') ILIKE $3) GROUP BY w.id ORDER BY w.updated_at DESC LIMIT $4 OFFSET $5',
     [user.id, search.trim(), '%' + search.trim() + '%', limit, offset]
   )
 
