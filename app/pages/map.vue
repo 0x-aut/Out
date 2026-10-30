@@ -54,7 +54,7 @@ const routeBuilding = ref(false)
 const walkSaving = ref(false)
 const walkSaved = ref(false)
 const plannerError = ref('')
-const activeWalk = ref<{ id: string; title: string; description: string | null; visibility: 'private' | 'public' } | null>(null)
+const activeWalk = ref<{ id: string; title: string; description: string | null; visibility: 'private' | 'public'; isOwner: boolean } | null>(null)
 let recommendationRequestId = 0
 let mapTargetRequestId = 0
 let recommendationsReady = false
@@ -154,6 +154,7 @@ async function loadExistingWalk(id: string) {
       title: string
       description: string | null
       visibility: 'private' | 'public'
+      isOwner: boolean
       durationMinutes: number | null
       distanceMeters: number | null
       stops: Array<{
@@ -202,7 +203,8 @@ async function loadExistingWalk(id: string) {
       id: walk.id,
       title: walk.title,
       description: walk.description,
-      visibility: walk.visibility
+      visibility: walk.visibility,
+      isOwner: walk.isOwner
     }
     routeDistance.value = walk.distanceMeters || 0
     routeDuration.value = walk.durationMinutes ? walk.durationMinutes * 60 : 0
@@ -483,12 +485,22 @@ async function saveWalk() {
   }
 
   try {
-    if (activeWalk.value) {
+    if (activeWalk.value?.isOwner) {
       await $fetch('/api/walks/' + activeWalk.value.id, { method: 'PUT', body })
       walkSaved.value = true
       await router.replace('/walks/' + activeWalk.value.id)
     } else {
-      const response = await $fetch<SavedWalkResponse>('/api/walks', { method: 'POST', body })
+      const response = await $fetch<SavedWalkResponse>('/api/walks', {
+        method: 'POST',
+        body: {
+          ...body,
+          title: activeWalk.value ? 'Copy of ' + activeWalk.value.title : body.title,
+          description: activeWalk.value
+            ? 'A copy of a community walk, adjusted to your preferences.'
+            : body.description,
+          visibility: 'private'
+        }
+      })
       walkSaved.value = true
       await router.replace('/walks/' + response.walk.id)
     }
