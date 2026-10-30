@@ -49,11 +49,11 @@ All application data routes require a valid Better Auth session. User-owned reco
 - DELETE /api/saved-items/:id: remove one of the current user's saved items.
 - POST /api/mapbox/directions: return a Mapbox walking route for 2–25 ordered coordinates. The endpoint requires authentication and uses MAPBOX_API_KEY on the server.
 
-Places are shared catalog records. Walks, profiles, interests and saved items are user-scoped. Walk visibility defaults to private.
+Places are shared catalog records. Walks, profiles, interests and saved items are user-scoped. Walk visibility defaults to private. The walk listing API returns the signed-in user's own walks and public community walks, including ownership, destination count, first destination and an available stop image for discovery cards.
 
 ## Map and walking routes
 
-The map page uses Mapbox GL JS in a Vue component. The component creates the map after mounting and removes it before unmounting. Mapbox's GeolocateControl requests the browser's current location only after the user taps the location control. Browser geolocation requires HTTPS (localhost is allowed for local development) and the user must grant permission.
+The map page uses Mapbox GL JS in a Vue component. The component creates the map after mounting and removes it before unmounting. Mapbox's GeolocateControl requests the browser's current location only after the user taps the location control. Browser geolocation requires HTTPS (localhost is allowed for local development) and the user must grant permission. The `/walks` page lists owned walks and saved public walks; `/walks/:id` displays an itinerary and lets its owner edit the title, description, visibility and ordered stops or delete the walk. The home feed uses live Qloo recommendations and walk records instead of placeholder popularity or friend activity.
 
 Map rendering needs a public Mapbox token (pk.) in NUXT_PUBLIC_MAPBOX_TOKEN. Walking directions use the server-only MAPBOX_API_KEY secret token with the directions:read scope. Do not put an sk. token in a NUXT_PUBLIC_* variable. The map displays Qloo recommendations that include valid coordinates; users can select up to 24 stops, calculate a walking route from their current location, reorder stops, and save the walk to their account.
 
