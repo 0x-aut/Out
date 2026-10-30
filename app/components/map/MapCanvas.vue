@@ -32,6 +32,7 @@ let geolocateControl: MapboxGeolocateControl | null = null
 let markers: MapboxMarker[] = []
 let mapLoaded = false
 let fittedInitialPlaces = false
+let hasLocatedUser = false
 
 function routeFeatureCollection() {
   return {
@@ -83,7 +84,7 @@ function syncMarkers() {
 }
 
 function fitPlaces() {
-  if (!map || !mapLoaded || fittedInitialPlaces) return
+  if (!map || !mapLoaded || fittedInitialPlaces || hasLocatedUser) return
   const places = validPlaces()
   if (!places.length) return
 
@@ -199,6 +200,7 @@ onMounted(async () => {
       })
 
       geolocateControl.on('geolocate', position => {
+        hasLocatedUser = true
         emit('location', {
           latitude: position.coords.latitude,
           longitude: position.coords.longitude,
