@@ -23,14 +23,14 @@ export async function insertWalkStops(client: PoolClient, walkId: string, stops:
 
 export async function fetchWalk(id: string, userId: string) {
   const walkResult = await database.query(
-    'SELECT id, title, description, duration_minutes AS "durationMinutes", distance_meters AS "distanceMeters", visibility, created_at AS "createdAt", updated_at AS "updatedAt" FROM walks WHERE id = $1 AND (user_id = $2 OR visibility = $3)',
+    'SELECT id, title, description, duration_minutes AS "durationMinutes", distance_meters AS "distanceMeters", visibility, created_at AS "createdAt", updated_at AS "updatedAt", user_id = $2 AS "isOwner" FROM walks WHERE id = $1 AND (user_id = $2 OR visibility = $3)',
     [id, userId, 'public']
   )
 
   if (!walkResult.rowCount) return null
 
   const stopResult = await database.query(
-    'SELECT id, place_id AS "placeId", position, name, address, latitude, longitude, notes, duration_minutes AS "durationMinutes" FROM walk_stops WHERE walk_id = $1 ORDER BY position ASC',
+    'SELECT s.id, s.place_id AS "placeId", s.position, s.name, s.address, s.latitude, s.longitude, s.notes, s.duration_minutes AS "durationMinutes", p.image_url AS "imageUrl" FROM walk_stops s LEFT JOIN places p ON p.id = s.place_id WHERE s.walk_id = $1 ORDER BY s.position ASC',
     [id]
   )
 

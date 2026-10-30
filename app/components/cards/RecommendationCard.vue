@@ -13,11 +13,12 @@ defineProps<{
     imageUrl: string | null
   }
 }>()
+const emit = defineEmits<{ select: [id: string] }>()
 
 </script>
 
 <template>
-  <article class="h-[218px] min-w-[238px] snap-start overflow-hidden rounded-[20px] border border-white/90 bg-white shadow-[0_5px_14px_rgba(28,28,33,0.08)] sm:min-w-[250px]">
+  <article class="relative h-[218px] min-w-[238px] snap-start overflow-hidden rounded-[20px] border border-white/90 bg-white shadow-[0_5px_14px_rgba(28,28,33,0.08)] sm:min-w-[250px]">
     <div class="relative h-[126px] overflow-hidden bg-[#e7e8f2]">
       <img
         v-if="place.imageUrl"
@@ -34,7 +35,8 @@ defineProps<{
       </span>
     </div>
 
-    <div class="px-3.5 pb-3 pt-2.5">
+    <button type="button" class="absolute inset-0 z-10" :aria-label="'Open ' + place.name + ' on the map'" @click="emit('select', place.id)" />
+    <div class="pointer-events-none px-3.5 pb-3 pt-2.5">
       <div class="mb-1 flex items-center gap-2">
         <span class="truncate text-[9px] font-semibold uppercase tracking-[0.08em] text-[#888891]">{{ place.category || 'Place' }}</span>
       </div>
