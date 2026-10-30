@@ -184,6 +184,7 @@ async function loadExistingWalk(id: string) {
     const destinationStops = locatedStops.filter(stop => stop.id !== origin.id)
     places.value = destinationStops.map(stop => ({
       id: stop.placeId || stop.id,
+      placeId: stop.placeId,
       name: stop.name,
       category: null,
       address: stop.address,
@@ -473,7 +474,7 @@ async function saveWalk() {
         durationMinutes: null
       }] : []),
       ...selectedPlaces.value.map(place => ({
-        placeId: place.id,
+        placeId: place.placeId === undefined ? place.id : place.placeId,
         name: place.name,
         address: place.address,
         latitude: place.latitude,
