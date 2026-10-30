@@ -15,6 +15,10 @@ export const auth = betterAuth({
   secret: process.env.BETTER_AUTH_SECRET,
   database: new Pool({
     connectionString: database.toString(),
+    ssl: {
+      ca: process.env.DATABASE_CA_CERTIFICATE,
+      rejectUnauthorized: false,
+    },
     max: 10,
     idleTimeoutMillis: 30_000,
     connectionTimeoutMillis: 10_000
