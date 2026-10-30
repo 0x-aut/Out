@@ -50,11 +50,11 @@ function endDrag() {
 </script>
 
 <template>
-  <div v-if="props.modelValue" class="fixed inset-0 z-[60] flex items-end justify-center bg-[#17171c]/30 px-0 pb-0 backdrop-blur-[2px]" @click.self="close" @keydown.esc="close">
+  <div v-if="props.modelValue" class="fixed inset-0 z-[60] flex items-end justify-center bg-[#17171c]/30 px-[7.5px] pb-[7.5px] backdrop-blur-[2px]" @click.self="close" @keydown.esc="close">
     <section
       ref="panel"
       aria-labelledby="walk-plan-title"
-      class="max-h-[88dvh] w-full max-w-[390px] overflow-y-auto rounded-t-[30px] bg-white px-5 pb-[max(24px,env(safe-area-inset-bottom))] pt-4 text-center sm:px-6"
+      class="max-h-[88dvh] w-[calc(100vw-15px)] max-w-[390px] overflow-y-auto rounded-[30px] bg-white px-5 pb-3 pt-4 text-center sm:px-6"
       :style="{ transform: `translateY(${dragY}px)`, transition: dragStart === null ? 'transform 220ms ease-out' : 'none' }"
     >
       <div
@@ -79,12 +79,11 @@ function endDrag() {
         <LocationCard v-for="(spot, index) in spots" :key="spot.name" :name="spot.name" :image="spot.image" :rotation="spot.rotation" :layer="spots.length - index" visual-only />
       </div>
       <div class="mt-5 text-left">
-        <p class="mb-2.5 text-[11px] font-semibold text-[#41414a]">How long do you want to wander?</p>
         <div class="flex items-center justify-center gap-2">
           <button v-for="option in options" :key="option" type="button" :aria-pressed="props.duration === option" class="h-10 min-w-[57px] rounded-full px-4 text-[11px] font-semibold transition active:scale-[0.98]" :class="props.duration === option ? 'bg-gradient-to-b from-[#303036] to-[#151519] text-white shadow-[0_4px_10px_rgba(22,22,27,0.20)]' : 'border border-[#e9e9ed] bg-white text-[#25252b] hover:bg-[#f8f8fa]'" @click="emit('update:duration', option)">{{ option }}</button>
         </div>
       </div>
-      <ActionButton block class="mt-5 !h-12" @click="emit('build')">
+      <ActionButton block class="mt-5 !h-12 !rounded-full" @click="emit('build')">
         <Check v-if="props.built" :size="13" />
         {{ props.built ? props.duration + ' walk is ready' : 'Build my ' + props.duration + ' walk' }}
       </ActionButton>
