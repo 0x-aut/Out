@@ -81,7 +81,7 @@ function formatDuration(seconds: number) {
       ref="panel"
       aria-labelledby="walk-plan-title"
       class="max-h-[88dvh] w-[calc(100vw-15px)] max-w-[430px] overflow-y-auto rounded-[30px] bg-white px-5 pb-4 pt-4 text-center sm:px-6"
-      :style="{ transform: \`translateY(\${dragY}px)\`, transition: dragStart === null ? 'transform 220ms ease-out' : 'none' }"
+      :style="{ transform: 'translateY(' + dragY + 'px)', transition: dragStart === null ? 'transform 220ms ease-out' : 'none' }"
     >
       <div
         class="mx-auto mb-3 flex h-5 w-16 cursor-grab touch-none items-center justify-center active:cursor-grabbing"
