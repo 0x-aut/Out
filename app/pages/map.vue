@@ -36,7 +36,7 @@ const mapCanvas = ref<{ locateUser: () => void } | null>(null)
 const search = ref(typeof routeQuery.query.vibe === 'string' ? routeQuery.query.vibe : '')
 const chatOpen = ref(false)
 const plannerOpen = ref(false)
-const activeFilters = ref(['Courtyards', 'Views', 'Cafés', 'Architecture'])
+const activeFilters = ref<string[]>([])
 const places = ref<MapPlace[]>([])
 const recommendationsLoading = ref(false)
 const recommendationsError = ref('')
@@ -69,6 +69,11 @@ const canBuildWalk = computed(() =>
   selectedPlaces.value.length <= 24 &&
   !routeBuilding.value
 )
+
+function apiErrorMessage(error: unknown, fallback: string) {
+  const value = error as { data?: { statusMessage?: string }; statusMessage?: string }
+  return value?.data?.statusMessage || value?.statusMessage || fallback
+}
 
 function clearRoute() {
   walkingRoute.value = null
@@ -116,9 +121,7 @@ async function loadRecommendations() {
     }
   } catch (error) {
     if (requestId !== recommendationRequestId) return
-    recommendationsError.value = error instanceof Error
-      ? error.message
-      : 'Your places could not be loaded. Please try again.'
+    recommendationsError.value = apiErrorMessage(error, 'Your places could not be loaded. Please try again.')
     places.value = []
   } finally {
     if (requestId === recommendationRequestId) recommendationsLoading.value = false
@@ -155,6 +158,7 @@ function matchesFilter(place: MapPlace, filter: string) {
 
 const visiblePlaces = computed(() => places.value.filter(place =>
   selectedIds.value.includes(place.id) ||
+  !activeFilters.value.length ||
   activeFilters.value.some(filter => matchesFilter(place, filter))
 ))
 
@@ -247,9 +251,7 @@ async function buildWalk() {
     routeDistance.value = response.route.distance
     routeDuration.value = response.route.duration
   } catch (error) {
-    plannerError.value = error instanceof Error
-      ? error.message
-      : 'Your walking route could not be calculated. Please try again.'
+    plannerError.value = apiErrorMessage(error, 'Your walking route could not be calculated. Please try again.')
   } finally {
     routeBuilding.value = false
   }
@@ -289,9 +291,7 @@ async function saveWalk() {
     walkSaved.value = true
     await router.replace({ path: '/map', query: { savedWalk: response.walk.id } })
   } catch (error) {
-    plannerError.value = error instanceof Error
-      ? error.message
-      : 'Your walk could not be saved. Please try again.'
+    plannerError.value = apiErrorMessage(error, 'Your walk could not be saved. Please try again.')
   } finally {
     walkSaving.value = false
   }
@@ -381,7 +381,7 @@ watch(chatOpen, open => {
       </div>
     </div>
 
-    <div class="pointer-events-none absolute inset-x-0 bottom-0 z-20 px-3 pb-[max(12px,env(safe-area-inset-bottom))] sm:px-5 sm:pb-6">
+    <div v-if="!chatOpen && !plannerOpen" class="pointer-events-none absolute inset-x-0 bottom-0 z-20 px-3 pb-[max(12px,env(safe-area-inset-bottom))] sm:px-5 sm:pb-6">
       <WalkBuilderSheet
         :selected-places="selectedPlaces"
         :location-ready="Boolean(userLocation)"
@@ -396,7 +396,7 @@ watch(chatOpen, open => {
     <div
       v-if="locationError || recommendationsError"
       role="status"
-      class="pointer-events-none absolute bottom-[112px] left-4 right-4 z-30 mx-auto max-w-[390px] rounded-[16px] border border-white bg-white/95 px-3.5 py-2.5 text-center text-[10px] leading-relaxed text-[#686873] shadow-[0_4px_14px_rgba(28,28,33,0.12)]"
+      class="pointer-events-none absolute left-4 right-4 top-[132px] z-30 mx-auto max-w-[390px] rounded-[16px] border border-white bg-white/95 px-3.5 py-2.5 text-center text-[10px] leading-relaxed text-[#686873] shadow-[0_4px_14px_rgba(28,28,33,0.12)]"
     >
       {{ locationError || recommendationsError }}
     </div>
