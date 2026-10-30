@@ -1,6 +1,7 @@
 <script setup lang="ts">
 const router = useRouter()
 const vibe = ref('')
+const popularTab = ref<'spots' | 'walks'>('spots')
 
 useHead({ title: 'Explore — Out' })
 
@@ -10,6 +11,18 @@ const walks = [
   { id: 'tiles', title: 'Tiles, tarts & tiny streets', duration: '55 min', stops: '3 stops', distance: '11 min from you', image: 'https://images.unsplash.com/photo-1548707309-dcebeab9ea9b?w=800&h=900&fit=crop', position: 'center 54%' }
 ]
 
+const popularSpots = [
+  { id: 'miradouro-santa-luzia', name: 'Miradouro de Santa Luzia', category: 'Viewpoint · Alfama', activity: '24 planning to visit', friends: 'Karina + 2 friends', image: 'https://images.unsplash.com/photo-1506377585622-bedcbb027afc?w=800&h=600&fit=crop' },
+  { id: 'timeout-market', name: 'Time Out Market', category: 'Food hall · Cais do Sodré', activity: '18 planning to visit', friends: 'Tom and Mia saved this', image: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=800&h=600&fit=crop' },
+  { id: 'lx-factory', name: 'LX Factory', category: 'Culture · Alcântara', activity: '16 planning to visit', friends: 'Popular with your circle', image: 'https://images.unsplash.com/photo-1518005020951-eccb494ad742?w=800&h=600&fit=crop' }
+]
+
+const popularWalks = [
+  { id: 'bica', title: 'Bica down to the river', duration: '1 h 10', stops: '4 stops', distance: 'Walked by 32 people this week', image: 'https://images.unsplash.com/photo-1555881400-74d7acaacd8b?w=800&h=900&fit=crop', position: 'center 54%' },
+  { id: 'sunset', title: 'Sunset over the rooftops', duration: '1 h 45', stops: '5 stops', distance: 'Saved by 21 people', image: 'https://images.unsplash.com/photo-1506377585622-bedcbb027afc?w=800&h=900&fit=crop', position: 'center 52%' },
+  { id: 'tiles', title: 'Tiles, tarts & tiny streets', duration: '55 min', stops: '3 stops', distance: 'Karina and 8 others tried this', image: 'https://images.unsplash.com/photo-1548707309-dcebeab9ea9b?w=800&h=900&fit=crop', position: 'center 54%' }
+]
+
 function startFromVibe() {
   const query = vibe.value.trim()
   router.push({ path: '/map', query: { ...(query ? { vibe: query } : {}), mode: 'chat' } })
@@ -17,6 +30,10 @@ function startFromVibe() {
 
 function openWalk(id: string) {
   router.push({ path: '/map', query: { walk: id } })
+}
+
+function openSpot(id: string) {
+  router.push({ path: '/map', query: { spot: id } })
 }
 </script>
 
@@ -61,6 +78,42 @@ function openWalk(id: string) {
             <h2 id="people-heading" class="unmodified-font-san text-[12px] font-semibold text-[#41414a]">Your people were here</h2>
           </div>
           <PeopleCard />
+        </section>
+
+        <section aria-labelledby="popular-heading" class="min-w-0 lg:col-span-2">
+          <div class="mb-3 flex items-center justify-between gap-3">
+            <div>
+              <h2 id="popular-heading" class="unmodified-font-san text-[15px] font-bold tracking-[-0.04em] text-[#202027]">Popular around you</h2>
+              <p class="mt-0.5 text-[10px] text-[#777780]">Places and walks people are choosing</p>
+            </div>
+            <span class="rounded-full bg-white/75 px-2.5 py-1 text-[9px] font-semibold text-[#666672]">This week</span>
+          </div>
+
+          <div class="mb-3 inline-flex rounded-full border border-white/90 bg-white/65 p-1 shadow-[0_2px_8px_rgba(36,36,51,0.04)]" role="tablist" aria-label="Popular recommendations">
+            <button
+              type="button"
+              role="tab"
+              :aria-selected="popularTab === 'spots'"
+              class="h-8 rounded-full px-4 text-[10px] font-semibold transition"
+              :class="popularTab === 'spots' ? 'bg-[#19191e] text-white shadow-sm' : 'text-[#686873] hover:text-[#222228]'"
+              @click="popularTab = 'spots'"
+            >Spots</button>
+            <button
+              type="button"
+              role="tab"
+              :aria-selected="popularTab === 'walks'"
+              class="h-8 rounded-full px-4 text-[10px] font-semibold transition"
+              :class="popularTab === 'walks' ? 'bg-[#19191e] text-white shadow-sm' : 'text-[#686873] hover:text-[#222228]'"
+              @click="popularTab = 'walks'"
+            >Walks</button>
+          </div>
+
+          <div v-if="popularTab === 'spots'" role="tabpanel" class="hide-scrollbar -mx-4 flex snap-x snap-mandatory gap-2.5 overflow-x-auto px-4 pb-2 sm:mx-0 sm:px-0">
+            <PopularSpotCard v-for="spot in popularSpots" :key="spot.id" :spot="spot" @select="openSpot" />
+          </div>
+          <div v-else role="tabpanel" class="hide-scrollbar -mx-4 flex snap-x snap-mandatory gap-2.5 overflow-x-auto px-4 pb-2 sm:mx-0 sm:px-0">
+            <WalkCard v-for="walk in popularWalks" :key="walk.id" :walk="walk" @select="openWalk" />
+          </div>
         </section>
       </div>
     </div>
