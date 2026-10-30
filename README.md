@@ -15,7 +15,7 @@ Required environment variables:
 - `BETTER_AUTH_SECRET`: a high-entropy secret of at least 32 characters.
 - `BETTER_AUTH_URL`: the public origin of this Out deployment (for local development, `http://localhost:3000`).
 - `QLOO_API_KEY`: server-side Qloo API key. It is never exposed to the browser.
-- `QLOO_BASE_URL` (optional): API origin for the environment that issued your key. Defaults to `https://api.qloo.com`. For an event-issued key, use the host provided by Qloo (for example, `https://hackathon.api.qloo.com` when that is the endpoint specified for your credential).
+- `QLOO_BASE_URL` (optional): API origin for the environment that issued your key. Defaults to `https://hackathon.api.qloo.com` for the Qloo hackathon API. Set it to `https://api.qloo.com` when using a standard production API key.
 
 ## Database setup
 

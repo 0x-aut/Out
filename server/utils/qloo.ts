@@ -1,6 +1,6 @@
 import type { InterestInput } from './validation'
 
-const DEFAULT_QLOO_BASE_URL = 'https://api.qloo.com'
+const DEFAULT_QLOO_BASE_URL = 'https://hackathon.api.qloo.com'
 const TAG_CACHE_TTL = 6 * 60 * 60 * 1000
 const RECOMMENDATION_CACHE_TTL = 5 * 60 * 1000
 
