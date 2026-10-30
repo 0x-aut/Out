@@ -67,6 +67,23 @@ const cache = qlooGlobal.__outQlooCache ??= {
   recommendations: new Map<string, CacheEntry<QlooRecommendations>>()
 }
 
+const MIN_QLOO_REQUEST_INTERVAL = 250
+let qlooRequestQueue = Promise.resolve()
+let lastQlooRequestStartedAt = 0
+
+async function waitForQlooRequestSlot(): Promise<void> {
+  let release!: () => void
+  const previous = qlooRequestQueue
+  qlooRequestQueue = new Promise<void>(resolve => { release = resolve })
+  await previous
+
+  const delay = Math.max(0, MIN_QLOO_REQUEST_INTERVAL - (Date.now() - lastQlooRequestStartedAt))
+  if (delay) await new Promise(resolve => setTimeout(resolve, delay))
+
+  lastQlooRequestStartedAt = Date.now()
+  release()
+}
+
 const interestAliases: Record<string, string[]> = {
   'Hidden gems': ['hidden gem', 'off the beaten path'],
   'Local neighbourhoods': ['local neighborhood', 'neighborhood'],
@@ -156,6 +173,8 @@ async function qlooGet(path: string, params: URLSearchParams): Promise<Record<st
 
   const url = new URL(path.replace(/^\//, ''), getBaseUrl().toString().replace(/\/$/, '') + '/')
   url.search = params.toString()
+
+  await waitForQlooRequestSlot()
 
   let response: Response
   try {

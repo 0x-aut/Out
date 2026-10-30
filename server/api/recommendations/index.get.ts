@@ -70,8 +70,13 @@ export default defineEventHandler(async (event) => {
     recommendations = await getQlooPlaceRecommendations({ interests, travelStyle, homeBase })
   } catch (error) {
     if (error instanceof QlooApiError) {
-      if (error.statusCode === 503 || error.statusCode === 504) {
-        throw createError({ statusCode: error.statusCode, statusMessage: error.message })
+      if ([429, 503, 504].includes(error.statusCode)) {
+        throw createError({
+          statusCode: error.statusCode,
+          statusMessage: error.statusCode === 429
+            ? 'Qloo is rate-limiting recommendations. Please try again shortly.'
+            : error.message
+        })
       }
       if (error.statusCode === 400 && homeBase) {
         throw createError({
