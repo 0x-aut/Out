@@ -27,7 +27,7 @@ const mapError = ref('')
 const mapLoading = ref(true)
 
 let map: MapboxMap | null = null
-let mapbox: typeof import('mapbox-gl/esm') | null = null
+let mapbox: typeof import('mapbox-gl').default | null = null
 let geolocateControl: MapboxGeolocateControl | null = null
 let markers: MapboxMarker[] = []
 let mapLoaded = false
@@ -169,7 +169,7 @@ onMounted(async () => {
   }
 
   try {
-    mapbox = await import('mapbox-gl/esm')
+    mapbox = (await import('mapbox-gl')).default
     if (!container.value) return
 
     map = new mapbox.Map({
