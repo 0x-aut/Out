@@ -5,38 +5,14 @@ const vibe = ref('')
 useHead({ title: 'Explore — Out' })
 
 const walks = [
-  {
-    id: 'bica',
-    title: 'Bica down to the river',
-    duration: '1 h 10',
-    stops: '4 stops',
-    distance: '8 min from you, ends at Cais do Sodré',
-    image: 'https://images.unsplash.com/photo-1555881400-74d7acaacd8b?w=800&h=900&fit=crop',
-    position: 'center 54%'
-  },
-  {
-    id: 'sunset',
-    title: 'Sunset over the rooftops',
-    duration: '1 h 45',
-    stops: '5 stops',
-    distance: '3 min from you',
-    image: 'https://images.unsplash.com/photo-1506377585622-bedcbb027afc?w=800&h=900&fit=crop',
-    position: 'center 52%'
-  },
-  {
-    id: 'tiles',
-    title: 'Tiles, tarts & tiny streets',
-    duration: '55 min',
-    stops: '3 stops',
-    distance: '11 min from you',
-    image: 'https://images.unsplash.com/photo-1548707309-dcebeab9ea9b?w=800&h=900&fit=crop',
-    position: 'center 54%'
-  }
+  { id: 'bica', title: 'Bica down to the river', duration: '1 h 10', stops: '4 stops', distance: '8 min from you, ends at Cais do Sodré', image: 'https://images.unsplash.com/photo-1555881400-74d7acaacd8b?w=800&h=900&fit=crop', position: 'center 54%' },
+  { id: 'sunset', title: 'Sunset over the rooftops', duration: '1 h 45', stops: '5 stops', distance: '3 min from you', image: 'https://images.unsplash.com/photo-1506377585622-bedcbb027afc?w=800&h=900&fit=crop', position: 'center 52%' },
+  { id: 'tiles', title: 'Tiles, tarts & tiny streets', duration: '55 min', stops: '3 stops', distance: '11 min from you', image: 'https://images.unsplash.com/photo-1548707309-dcebeab9ea9b?w=800&h=900&fit=crop', position: 'center 54%' }
 ]
 
 function startFromVibe() {
   const query = vibe.value.trim()
-  router.push({ path: '/map', query: query ? { vibe: query } : {} })
+  router.push({ path: '/map', query: { ...(query ? { vibe: query } : {}), mode: 'chat' } })
 }
 
 function openWalk(id: string) {
@@ -65,13 +41,7 @@ function openWalk(id: string) {
           <div class="mb-2.5 flex items-center justify-between">
             <h2 id="up-next-heading" class="unmodified-font-san text-[12px] font-semibold text-[#41414a]">Up next</h2>
           </div>
-          <UpcomingWalk
-            title="Alfama back streets tour"
-            duration="1 h 25"
-            start-time="Today 17:30"
-            stops="4 stops"
-            @open="openWalk('alfama')"
-          />
+          <UpcomingWalk title="Alfama back streets tour" duration="1 h 25" start-time="Today 17:30" stops="4 stops" @open="openWalk('alfama')" />
         </section>
 
         <section aria-labelledby="walks-heading" class="min-w-0">
@@ -81,7 +51,7 @@ function openWalk(id: string) {
               See all <span aria-hidden="true">›</span>
             </NuxtLink>
           </div>
-          <div class="hide-scrollbar -mx-4 flex snap-x snap-mandatory gap-2.5 overflow-x-auto px-4 pb-2 sm:mx-0 sm:px-0">
+          <div class="hide-scrollbar -mx-4 flex snap-x snap-mandatory gap-2.5 overflow-x-auto scroll-pl-6 px-6 pb-2 sm:mx-0 sm:px-2">
             <WalkCard v-for="walk in walks" :key="walk.id" :walk="walk" @select="openWalk" />
           </div>
         </section>
