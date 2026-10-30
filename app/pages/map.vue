@@ -38,6 +38,7 @@ const chatOpen = ref(false)
 const plannerOpen = ref(false)
 const activeFilters = ref<string[]>([])
 const places = ref<MapPlace[]>([])
+const recommendedPlaces = ref<MapPlace[]>([])
 const recommendationsLoading = ref(false)
 const recommendationsError = ref('')
 const recommendationLocation = ref<string | null>(null)
@@ -108,6 +109,7 @@ async function loadRecommendations() {
       }]
     })
 
+    recommendedPlaces.value = [...places.value]
     recommendationLocation.value = response.location
     recommendationPersonalized.value = response.personalized
     selectedIds.value = []
@@ -120,6 +122,7 @@ async function loadRecommendations() {
     if (requestId !== recommendationRequestId) return
     recommendationsError.value = apiErrorMessage(error, 'Your places could not be loaded. Please try again.')
     places.value = []
+    recommendedPlaces.value = []
   } finally {
     if (requestId === recommendationRequestId) recommendationsLoading.value = false
   }
@@ -128,10 +131,15 @@ async function loadRecommendations() {
 async function ensureRecommendations() {
   if (recommendationsReady) return
   if (!recommendationsPromise) {
-    recommendationsPromise = loadRecommendations().finally(() => {
-      recommendationsReady = true
-      recommendationsPromise = null
+    const ownerId = authSession.value.data?.user?.id
+    let pending: Promise<void>
+    pending = loadRecommendations().finally(() => {
+      if (recommendationsPromise === pending) {
+        recommendationsReady = authSession.value.data?.user?.id === ownerId
+        recommendationsPromise = null
+      }
     })
+    recommendationsPromise = pending
   }
   await recommendationsPromise
 }
@@ -255,9 +263,36 @@ async function loadPlace(id: string) {
   }
 }
 
+let currentUserId: string | undefined
+
 async function syncMapTarget() {
   const requestId = ++mapTargetRequestId
-  if (!authSession.value.data?.user?.id) return
+  const userId = authSession.value.data?.user?.id
+  if (!userId) {
+    if (currentUserId) {
+      recommendationRequestId++
+      recommendationsReady = false
+      recommendationsPromise = null
+      places.value = []
+      recommendedPlaces.value = []
+      selectedIds.value = []
+      userLocation.value = null
+      activeWalk.value = null
+      recommendationLocation.value = null
+      recommendationPersonalized.value = false
+      recommendationsLoading.value = false
+      clearRoute()
+    }
+    currentUserId = undefined
+    return
+  }
+
+  if (currentUserId !== userId) {
+    currentUserId = userId
+    recommendationsReady = false
+    recommendationsPromise = null
+    recommendationRequestId++
+  }
   await ensureRecommendations()
   if (requestId !== mapTargetRequestId) return
 
@@ -268,8 +303,15 @@ async function syncMapTarget() {
     return
   }
 
-  activeWalk.value = null
+  if (activeWalk.value) {
+    activeWalk.value = null
+    places.value = [...recommendedPlaces.value]
+    selectedIds.value = []
+    userLocation.value = null
+    clearRoute()
+  }
   if (typeof placeId === 'string') await loadPlace(placeId)
+  else if (!places.value.length && recommendedPlaces.value.length) places.value = [...recommendedPlaces.value]
 }
 
 watch(
