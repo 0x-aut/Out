@@ -32,7 +32,7 @@ export default defineEventHandler(async (event) => {
     }
   }
 
-  let recommendations
+  let recommendations: Awaited<ReturnType<typeof getQlooPlaceRecommendations>>
   try {
     recommendations = await getQlooPlaceRecommendations({ interests, travelStyle, homeBase })
   } catch (error) {

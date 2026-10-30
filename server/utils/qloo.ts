@@ -393,10 +393,11 @@ export async function getQlooPlaceRecommendations(input: {
 }): Promise<QlooRecommendations> {
   const interests = input.interests.slice(0, 20)
   const styleTerms = travelStyleAliases[input.travelStyle] || []
-  const styleInterest: InterestInput[] = styleTerms.length
-    ? [{ name: input.travelStyle, category: 'vibes' }]
-    : []
-  const signals = [...interests, ...styleInterest]
+  const styleSignals: InterestInput[] = styleTerms.map(name => ({
+    name,
+    category: 'vibes'
+  }))
+  const signals = [...interests, ...styleSignals]
 
   const resolved = await mapWithConcurrency(signals, 4, resolveOneInterest)
   const resolvedByInterest = new Map<string, QlooTag[]>()
