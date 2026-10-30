@@ -30,7 +30,6 @@ let map: MapboxMap | null = null
 let mapbox: typeof import('mapbox-gl/esm') | null = null
 let geolocateControl: MapboxGeolocateControl | null = null
 let markers: MapboxMarker[] = []
-let markerById = new Map<string, MapboxMarker>()
 let pendingFocusId: string | null = null
 let mapLoaded = false
 let fittedInitialPlaces = false
@@ -61,7 +60,6 @@ function syncMarkers() {
 
   markers.forEach(marker => marker.remove())
   markers = []
-  markerById.clear()
 
   for (const place of validPlaces()) {
     const selected = props.selectedIds.includes(place.id)
@@ -82,7 +80,6 @@ function syncMarkers() {
       .setLngLat([place.longitude, place.latitude])
       .addTo(map)
     markers.push(marker)
-    markerById.set(place.id, marker)
   }
 }
 
