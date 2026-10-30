@@ -52,16 +52,12 @@ export default defineEventHandler(async (event) => {
 
     await client.query('COMMIT')
 
-    const updatedUser = await auth.api.updateUser({
+    await auth.api.updateUser({
       headers: toWebRequest(event).headers,
       body: { name }
     })
 
-    if (!updatedUser?.user) {
-      throw createError({ statusCode: 502, statusMessage: 'Your profile details were saved, but your account name could not be updated' })
-    }
-
-    return { success: true, name: updatedUser.user.name, profile: { bio, homeBase, travelStyle }, interests }
+    return { success: true, name, profile: { bio, homeBase, travelStyle }, interests }
   } catch (error) {
     await client.query('ROLLBACK')
     console.error('Could not save Out profile', error)
