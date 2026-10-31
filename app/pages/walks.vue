@@ -116,7 +116,7 @@ function openWalk(id: string) {
     <div class="mx-auto max-w-[960px]">
       <header class="mb-7 flex items-center justify-between gap-3">
         <NuxtLink to="/" class="inline-flex h-9 items-center gap-2 rounded-full px-2 text-[11px] font-semibold text-[#4c4c55] transition hover:bg-white/70"><ArrowLeft :size="15" /> Explore</NuxtLink>
-        <NuxtLink to="/map" class="inline-flex h-9 items-center gap-2 rounded-full bg-[#19191e] px-4 text-[10px] font-semibold text-white shadow-[0_4px_12px_rgba(22,22,27,0.16)]"><Plus :size="13" /> Build a walk</NuxtLink>
+        <NuxtLink to="/map" class="inline-flex h-9 items-center gap-2 rounded-full bg-gradient-to-b from-[#303036] to-[#151519] px-4 text-[12px] font-semibold text-white shadow-[0_4px_12px_rgba(22,22,27,0.16)]"><Plus :size="13" /> Build a walk</NuxtLink>
       </header>
 
       <div class="mb-6 flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
@@ -137,11 +137,11 @@ function openWalk(id: string) {
         <Footprints :size="25" class="mx-auto text-[#777780]" />
         <h2 class="mt-3 text-[17px] font-bold tracking-[-0.04em] text-[#202027]">Your walks live here.</h2>
         <p class="mx-auto mt-2 max-w-[300px] text-[11px] leading-relaxed text-[#777780]">Sign in to create, edit and save routes.</p>
-        <NuxtLink to="/signin" class="mt-4 inline-flex h-10 items-center rounded-full bg-[#19191e] px-6 text-[10px] font-semibold text-white">Sign in</NuxtLink>
+        <NuxtLink to="/signin" class="mt-4 inline-flex h-10 items-center rounded-full bg-gradient-to-b from-[#303036] to-[#151519] px-6 text-[13px] font-semibold text-white">Sign in</NuxtLink>
       </section>
       <template v-else>
         <div class="mb-5 flex items-center gap-1.5 rounded-full border border-white/90 bg-white/65 p-1" role="tablist" aria-label="Walk library">
-          <button v-for="tab in tabs" :key="tab.id" type="button" role="tab" :aria-selected="activeTab === tab.id" class="h-8 flex-1 rounded-full px-3 text-[10px] font-semibold transition" :class="activeTab === tab.id ? 'bg-[#19191e] text-white shadow-sm' : 'text-[#686873] hover:text-[#222228]'" @click="activeTab = tab.id">{{ tab.label }}</button>
+          <button v-for="tab in tabs" :key="tab.id" type="button" role="tab" :aria-selected="activeTab === tab.id" class="h-8 flex-1 rounded-full px-3 text-[10px] font-semibold transition" :class="activeTab === tab.id ? 'bg-gradient-to-b from-[#303036] to-[#151519] text-white shadow-sm' : 'text-[#686873] hover:text-[#222228]'" @click="activeTab = tab.id">{{ tab.label }}</button>
         </div>
 
         <div v-if="error" role="alert" class="mb-4 rounded-[16px] bg-[#fff5f4] px-4 py-3 text-[10px] text-[#a34b46]">{{ error }}</div>
@@ -168,7 +168,7 @@ function openWalk(id: string) {
               </div>
               <div class="mt-2 flex items-center gap-2">
                 <button type="button" class="text-[9px] font-semibold text-[#24242a] underline underline-offset-2" @click="openWalk(walk.id)">View walk</button>
-                <button v-if="!walk.isOwner && !savedItemFor(walk.id)" type="button" :disabled="savingId === walk.id" class="ml-auto inline-flex items-center gap-1 rounded-full bg-[#19191e] px-2.5 py-1.5 text-[8px] font-semibold text-white disabled:opacity-50" @click="saveWalk(walk)"><Bookmark :size="10" />{{ savingId === walk.id ? 'Saving' : 'Save' }}</button>
+                <button v-if="!walk.isOwner && !savedItemFor(walk.id)" type="button" :disabled="savingId === walk.id" class="ml-auto inline-flex items-center gap-1 rounded-full bg-gradient-to-b from-[#303036] to-[#151519] px-2.5 py-1.5 text-[10px] font-semibold text-white disabled:opacity-50" @click="saveWalk(walk)"><Bookmark :size="10" />{{ savingId === walk.id ? 'Saving' : 'Save' }}</button>
                 <span v-else-if="!walk.isOwner" class="ml-auto text-[8px] font-semibold text-[#6854b4]">Saved</span>
               </div>
             </div>
@@ -178,7 +178,7 @@ function openWalk(id: string) {
           <Footprints :size="24" class="mx-auto text-[#85858d]" />
           <h2 class="mt-3 text-[14px] font-bold text-[#292930]">{{ activeTab === 'mine' ? 'No walks created yet.' : activeTab === 'saved' ? 'No saved walks yet.' : 'No walks found.' }}</h2>
           <p class="mt-1 text-[10px] text-[#777780]">{{ activeTab === 'mine' ? 'Build a route from places on the map and save it here.' : activeTab === 'saved' ? 'Save a public walk to keep it close.' : 'Try a different search or create your first route.' }}</p>
-          <NuxtLink v-if="activeTab !== 'saved'" to="/map" class="mt-4 inline-flex h-9 items-center rounded-full bg-[#19191e] px-5 text-[10px] font-semibold text-white">Build a walk</NuxtLink>
+          <NuxtLink v-if="activeTab !== 'saved'" to="/map" class="mt-4 inline-flex h-9 items-center rounded-full bg-gradient-to-b from-[#303036] to-[#151519] px-5 text-[12px] font-semibold text-white">Build a walk</NuxtLink>
         </div>
       </template>
     </div>
