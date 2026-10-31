@@ -249,7 +249,7 @@ function openInMap() {
       <header class="mb-6 flex items-center justify-between gap-3">
         <NuxtLink to="/walks" class="inline-flex h-9 items-center gap-2 rounded-full px-2 text-[11px] font-semibold text-[#4c4c55] transition hover:bg-white/70"><ArrowLeft :size="15" /> Walks</NuxtLink>
         <button v-if="walk && !isOwner" type="button" :disabled="savePending" class="inline-flex h-9 items-center gap-2 rounded-full border border-white bg-white/85 px-3.5 text-[10px] font-semibold text-[#34343c] shadow-sm disabled:opacity-50" @click="toggleSaved"><Bookmark :size="13" />{{ savePending ? 'Saving…' : saved ? 'Saved' : 'Save walk' }}</button>
-        <button v-else-if="walk && isOwner && !editing" type="button" class="inline-flex h-9 items-center gap-2 rounded-full bg-[#19191e] px-3.5 text-[10px] font-semibold text-white shadow-sm" @click="editing = true"><Pencil :size="13" /> Edit walk</button>
+        <button v-else-if="walk && isOwner && !editing" type="button" class="inline-flex h-9 items-center gap-2 rounded-full bg-gradient-to-b from-[#303036] to-[#151519] px-3.5 text-[12px] font-semibold text-white shadow-sm" @click="editing = true"><Pencil :size="13" /> Edit walk</button>
       </header>
 
       <section v-if="loading" class="rounded-[24px] border border-white bg-white/80 px-6 py-14 text-center text-[11px] text-[#777780]">Loading walk…</section>
@@ -304,7 +304,7 @@ function openInMap() {
             </ol>
 
             <div class="mt-6 flex flex-wrap items-center gap-2">
-              <button type="button" class="inline-flex h-10 items-center gap-2 rounded-full bg-[#19191e] px-5 text-[10px] font-semibold text-white shadow-[0_4px_12px_rgba(22,22,27,0.16)]" @click="openInMap"><Footprints :size="13" /> Open on map</button>
+              <button type="button" class="inline-flex h-10 items-center gap-2 rounded-full bg-gradient-to-b from-[#303036] to-[#151519] px-5 text-[12px] font-semibold text-white shadow-[0_4px_12px_rgba(22,22,27,0.16)]" @click="openInMap"><Footprints :size="13" /> Open on map</button>
               <template v-if="editing">
                 <button type="button" class="inline-flex h-10 items-center rounded-full border border-[#e4e4e9] bg-white px-4 text-[10px] font-semibold text-[#55555d]" @click="cancelEditing">Cancel</button>
                 <button type="button" :disabled="saving" class="ml-auto inline-flex h-10 items-center gap-2 rounded-full bg-[#7659d6] px-5 text-[10px] font-semibold text-white disabled:opacity-50" @click="saveChanges"><Save :size="12" />{{ saving ? 'Saving…' : 'Save changes' }}</button>

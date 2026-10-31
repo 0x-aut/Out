@@ -49,7 +49,7 @@ async function submit() {
         <label for="password" class="mb-2 block text-[11px] font-semibold text-[#44444e]">Password</label>
         <input id="password" v-model="password" type="password" autocomplete="new-password" minlength="8" required placeholder="At least 8 characters" class="h-12 w-full rounded-2xl border border-[#e8e8ef] bg-[#fafafd] px-4 text-sm outline-none transition focus:border-[#9699d9] focus:ring-4 focus:ring-[#8588d9]/10">
         <p v-if="error" role="alert" class="mt-3 rounded-xl bg-red-50 px-3 py-2 text-xs text-red-600">{{ error }}</p>
-        <button type="submit" :disabled="pending" class="mt-6 flex h-12 w-full items-center justify-center gap-2 rounded-full bg-gradient-to-b from-[#303036] to-[#151519] text-[12px] font-semibold text-white shadow-[0_5px_14px_rgba(22,22,27,0.18)] transition hover:brightness-110 disabled:cursor-wait disabled:opacity-60">
+        <button type="submit" :disabled="pending" class="mt-6 flex h-12 w-full items-center justify-center gap-2 rounded-full bg-gradient-to-b from-[#303036] to-[#151519] text-[14px] font-semibold text-white shadow-[0_5px_14px_rgba(22,22,27,0.18)] transition hover:brightness-110 disabled:cursor-wait disabled:opacity-60">
           {{ pending ? 'Creating your account…' : 'Create account' }} <ArrowRight :size="15" />
         </button>
         <p class="mt-5 text-center text-[11px] text-[#777783]">Already have an account? <NuxtLink to="/signin" class="font-bold text-[#4d4f9b] hover:underline">Sign in</NuxtLink></p>

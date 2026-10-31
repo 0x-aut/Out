@@ -49,10 +49,14 @@ async function saveProfile() {
   saving.value = true
   try {
     const interests = interestGroups.flatMap(group => group.items.filter(item => selected.value.includes(item)).map(name => ({ name, category: group.category })))
-    await $fetch('/api/profile', { method: 'PUT', body: { name: name.value.trim(), profile: { bio: bio.value.trim(), homeBase: homeBase.value.trim(), travelStyle: travelStyle.value }, interests } })
+    const result = await $fetch<{ success: boolean; name: string; profile: { bio: string; homeBase: string; travelStyle: string }; interests: Array<{ name: string; category: string }> }>('/api/profile', { method: 'PUT', body: { name: name.value.trim(), profile: { bio: bio.value.trim(), homeBase: homeBase.value.trim(), travelStyle: travelStyle.value }, interests } })
+    if (!result.success || result.interests.length !== interests.length) throw new Error('Some interests could not be saved. Please try again.')
+    name.value = result.name
+    selected.value = result.interests.map(item => item.name)
     saved.value = true
-  } catch (cause) {
-    error.value = cause instanceof Error ? cause.message : 'Your profile could not be saved. Please try again.'
+  } catch (cause: unknown) {
+    const apiError = cause as { data?: { statusMessage?: string }; message?: string }
+    error.value = apiError.data?.statusMessage || apiError.message || 'Your profile could not be saved. Please try again.'
   } finally { saving.value = false }
 }
 
@@ -105,12 +109,12 @@ async function signOut() {
             </section>
 
             <section class="px-5 py-7 sm:px-8 sm:py-8">
-              <div class="mb-6"><p class="text-[10px] font-bold uppercase tracking-[0.16em] text-[#898991]">02 / Your taste</p><div class="mt-1.5 flex items-end justify-between gap-3"><div><h2 class="text-[17px] font-semibold tracking-[-0.04em] text-[#202027]">What feels like you?</h2><p class="mt-1 text-[11px] leading-relaxed text-[#85858d]">Choose the things you would happily go out of your way for.</p></div><span class="shrink-0 rounded-full bg-[#19191e] px-3 py-1.5 text-[9px] font-semibold tabular-nums text-white">{{ selected.length }} selected</span></div></div>
+              <div class="mb-6"><p class="text-[10px] font-bold uppercase tracking-[0.16em] text-[#898991]">02 / Your taste</p><div class="mt-1.5 flex items-end justify-between gap-3"><div><h2 class="text-[17px] font-semibold tracking-[-0.04em] text-[#202027]">What feels like you?</h2><p class="mt-1 text-[11px] leading-relaxed text-[#85858d]">Choose the things you would happily go out of your way for.</p></div><span class="shrink-0 rounded-full bg-gradient-to-b from-[#303036] to-[#151519] px-3 py-1.5 text-[10px] font-semibold tabular-nums text-white">{{ selected.length }} selected</span></div></div>
               <div class="space-y-7">
                 <div v-for="group in interestGroups" :key="group.category">
                   <div class="mb-3"><h3 class="text-[12px] font-semibold text-[#303038]">{{ group.title }}</h3><p class="mt-1 text-[10px] text-[#898991]">{{ group.hint }}</p></div>
                   <div class="flex flex-wrap gap-2">
-                    <button v-for="interest in group.items" :key="interest" type="button" :aria-pressed="selected.includes(interest)" class="inline-flex min-h-8 items-center gap-1.5 rounded-full border px-3 text-[10px] font-semibold transition duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#19191e] focus-visible:ring-offset-2" :class="selected.includes(interest) ? 'border-[#19191e] bg-gradient-to-b from-[#303036] to-[#151519] text-white shadow-[0_3px_9px_rgba(22,22,27,0.16)]' : 'border-[#e4e4e8] bg-white text-[#45454d] hover:border-[#9a9aa1] hover:bg-[#f8f8fa]'" @click="toggleInterest(interest)"><Check v-if="selected.includes(interest)" :size="11" :stroke-width="2.5" />{{ interest }}</button>
+                    <button v-for="interest in group.items" :key="interest" type="button" :aria-pressed="selected.includes(interest)" class="inline-flex min-h-9 items-center gap-1.5 rounded-full border px-3.5 text-[11px] font-semibold transition duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#19191e] focus-visible:ring-offset-2" :class="selected.includes(interest) ? 'border-[#19191e] bg-gradient-to-b from-[#303036] to-[#151519] text-white shadow-[0_3px_9px_rgba(22,22,27,0.16)]' : 'border-[#e4e4e8] bg-white text-[#45454d] hover:border-[#9a9aa1] hover:bg-[#f8f8fa]'" @click="toggleInterest(interest)"><Check v-if="selected.includes(interest)" :size="11" :stroke-width="2.5" />{{ interest }}</button>
                   </div>
                 </div>
               </div>
@@ -120,7 +124,7 @@ async function signOut() {
 
           <div class="flex flex-col gap-3 border-t border-[#ededf0] bg-[#fcfcfd] px-5 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-8">
             <div class="min-h-[18px]"><p v-if="error" role="alert" class="text-[11px] font-medium text-[#b33d3d]">{{ error }}</p><p v-else-if="saved" role="status" class="inline-flex items-center gap-1.5 text-[11px] font-medium text-[#4e6856]"><Check :size="13" /> Changes saved</p><p v-else class="text-[10px] text-[#898991]">You can update these details whenever you like.</p></div>
-            <button type="submit" :disabled="saving || !profileReady" class="inline-flex h-11 items-center justify-center gap-2 rounded-full bg-gradient-to-b from-[#303036] to-[#151519] px-7 text-[11px] font-semibold text-white shadow-[0_5px_14px_rgba(22,22,27,0.18)] transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-50"><Check v-if="saved && !saving" :size="14" /><Save v-else :size="14" />{{ saving ? 'Saving…' : profileLoading ? 'Loading profile…' : !profileReady ? 'Profile unavailable' : saved ? 'Saved' : 'Save changes' }}</button>
+            <ActionButton type="submit" :disabled="saving || !profileReady"><Check v-if="saved && !saving" :size="15" /><Save v-else :size="15" />{{ saving ? 'Saving…' : profileLoading ? 'Loading profile…' : !profileReady ? 'Profile unavailable' : saved ? 'Saved' : 'Save changes' }}</ActionButton>
           </div>
         </form>
       </template>
