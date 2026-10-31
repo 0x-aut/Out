@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { ArrowRight } from '@lucide/vue'
 import { authClient } from '~/lib/auth-client'
 
 type RecommendationItem = {
@@ -256,7 +257,7 @@ function openWalkLibrary() { router.push('/walks') }
       <section v-if="!authSession.data?.user && !authSession.isPending" class="rounded-[24px] border border-white/90 bg-white/80 px-5 py-7 text-center shadow-[0_8px_24px_rgba(35,35,55,0.05)]">
         <h2 class="unmodified-font-san text-[20px] font-bold tracking-[-0.05em] text-[#19191e]">Make Out yours.</h2>
         <p class="mx-auto mt-2 max-w-[300px] text-[11px] leading-relaxed text-[#777780]">Sign in to get places picked around your taste, save walks and keep your favourite routes close.</p>
-        <NuxtLink to="/signin" class="mt-4 inline-flex h-10 items-center rounded-full bg-[#19191e] px-6 text-[10px] font-semibold text-white">Sign in</NuxtLink>
+        <NuxtLink to="/signin" class="mt-5 inline-flex"><ActionButton><span class="px-1 text-[14px]">Sign in</span><ArrowRight :size="17" /></ActionButton></NuxtLink>
       </section>
     </div>
     <BottomNavigation active="explore" />
