@@ -398,6 +398,12 @@ function onLocationError(message: string) {
   locationError.value = message || 'Your location could not be determined. Check your browser location permission.'
 }
 
+function onMapReady() {
+  // Saved walks and place deep links have their own intended map focus.
+  if (typeof routeQuery.query.walk === 'string' || typeof routeQuery.query.place === 'string') return
+  requestLocation()
+}
+
 function requestLocation() {
   locationError.value = ''
   locationPending.value = true
@@ -556,7 +562,7 @@ watch(chatOpen, open => {
       @select="togglePlace"
       @location="onLocation"
       @location-error="onLocationError"
-      @ready="requestLocation"
+      @ready="onMapReady"
     />
 
     <div class="pointer-events-none absolute inset-x-0 top-0 z-20 px-3 pt-[max(12px,env(safe-area-inset-top))] sm:px-5 sm:pt-5">
