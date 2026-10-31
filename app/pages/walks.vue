@@ -150,7 +150,7 @@ function openWalk(id: string) {
         </div>
         <div v-else-if="visibleWalks.length" class="grid gap-3 sm:grid-cols-2">
           <article v-for="walk in visibleWalks" :key="walk.id" class="flex min-w-0 gap-3 rounded-[21px] border border-white/90 bg-white/90 p-3 shadow-[0_5px_17px_rgba(36,36,51,0.06)]">
-            <button type="button" class="relative h-[108px] w-[104px] shrink-0 overflow-hidden rounded-[16px] bg-[#77738e]" :aria-label="'Open ' + walk.title" @click="openWalk(walk.id)">
+            <NuxtLink :to="'/walks/' + walk.id" class="relative h-[108px] w-[104px] shrink-0 overflow-hidden rounded-[16px] bg-[#77738e]" :aria-label="'Open ' + walk.title">
               <img v-if="walk.imageUrl" :src="walk.imageUrl" :alt="walk.title" class="h-full w-full object-cover">
               <div v-else class="h-full w-full bg-[radial-gradient(ellipse_at_25%_15%,#aaa4d1_0%,#65617d_48%,#292932_100%)]"></div>
             </button>
@@ -169,7 +169,7 @@ function openWalk(id: string) {
               <div class="mt-2 flex items-center gap-2">
                 <button type="button" class="text-[9px] font-semibold text-[#24242a] underline underline-offset-2" @click="openWalk(walk.id)">View walk</button>
                 <button v-if="!walk.isOwner && !savedItemFor(walk.id)" type="button" :disabled="savingId === walk.id" class="ml-auto inline-flex items-center gap-1 rounded-full bg-gradient-to-b from-[#303036] to-[#151519] px-2.5 py-1.5 text-[10px] font-semibold text-white disabled:opacity-50" @click="saveWalk(walk)"><Bookmark :size="10" />{{ savingId === walk.id ? 'Saving' : 'Save' }}</button>
-                <span v-else-if="!walk.isOwner" class="ml-auto text-[8px] font-semibold text-[#6854b4]">Saved</span>
+                <span v-else-if="!walk.isOwner" class="ml-auto inline-flex items-center rounded-full bg-[#f0effb] px-2.5 py-1.5 text-[9px] font-semibold text-[#6854b4]">Saved</span>
               </div>
             </div>
           </article>
