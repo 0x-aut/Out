@@ -115,19 +115,19 @@ function formatDuration(seconds: number) {
             v-if="!props.locationReady"
             type="button"
             :disabled="props.locationPending"
-            class="rounded-full bg-[#19191e] px-3 py-2 text-[9px] font-semibold text-white disabled:opacity-50"
+            class="rounded-full bg-gradient-to-b from-[#303036] to-[#151519] px-3.5 py-2 text-[10px] font-semibold text-white shadow-[0_3px_9px_rgba(22,22,27,0.16)] disabled:opacity-50"
             @click="emit('locate')"
           >
             {{ props.locationPending ? 'Locating…' : 'Use my location' }}
           </button>
-          <span v-else class="text-[9px] font-semibold text-[#4c9877]">Ready</span>
+          <span v-else class="rounded-full bg-[#edf7f1] px-3 py-1.5 text-[9px] font-semibold text-[#4c9877]">Ready</span>
         </div>
       </div>
 
       <div class="mt-4 text-left">
         <div class="mb-2 flex items-center justify-between gap-3">
           <h3 class="text-[11px] font-bold text-[#292930]">Stops</h3>
-          <span class="text-[9px] font-medium text-[#777780]">{{ props.selectedPlaces.length }} of 24</span>
+          <span class="rounded-full bg-[#f2f1f8] px-2.5 py-1 text-[9px] font-semibold text-[#686873]">{{ props.selectedPlaces.length }} of 24</span>
         </div>
 
         <div v-if="!props.selectedPlaces.length" class="rounded-[16px] border border-dashed border-[#ddddE5] px-4 py-5 text-center">
@@ -175,7 +175,6 @@ function formatDuration(seconds: number) {
           <Check v-if="props.saved" :size="13" />
           {{ props.saving ? 'Saving walk…' : props.saved ? 'Walk saved' : 'Save this walk' }}
         </ActionButton>
-        <button type="button" class="h-8 w-full text-[10px] font-semibold text-[#74747e] transition hover:text-[#25252b]" @click="close">Back to map</button>
       </div>
     </section>
   </div>

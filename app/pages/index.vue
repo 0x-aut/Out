@@ -215,10 +215,10 @@ function openWalkLibrary() { router.push('/walks') }
         <div v-else-if="walksError" class="rounded-[18px] border border-white bg-white/75 px-4 py-4 text-[11px] text-[#686873]">{{ walksError }}</div>
         <div v-else-if="ownWalks.length" class="hide-scrollbar -mx-4 flex snap-x snap-mandatory gap-2.5 overflow-x-auto px-4 pb-2 sm:mx-0 sm:px-0">
           <WalkCard v-for="walk in ownWalks" :key="walk.id" :walk="toWalkCard(walk)" @select="openWalk" />
-          <button type="button" class="flex h-[190px] min-w-[150px] snap-start flex-col items-center justify-center rounded-[21px] border border-dashed border-[#c9c8d7] bg-white/60 px-5 text-center text-[#555560] transition hover:bg-white" @click="openWalkLibrary">
+          <NuxtLink to="/walks" class="flex h-[190px] min-w-[150px] snap-start flex-col items-center justify-center rounded-[21px] border border-dashed border-[#c9c8d7] bg-white/60 px-5 text-center text-[#555560] transition hover:bg-white">
             <span class="mb-2 grid h-9 w-9 place-items-center rounded-full bg-gradient-to-b from-[#303036] to-[#151519] text-[20px] text-white">+</span>
             <span class="text-[11px] font-semibold">All your walks</span>
-          </button>
+          </NuxtLink>
         </div>
         <div v-else class="rounded-[20px] border border-white/90 bg-white/75 px-4 py-4">
           <p class="text-[11px] font-semibold text-[#34343c]">Your next walk starts here.</p>

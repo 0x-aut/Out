@@ -39,6 +39,11 @@ input {
   font: inherit;
 }
 
+/* App-wide action controls use the same full pill silhouette. */
+button {
+  border-radius: 9999px;
+}
+
 ::selection {
   color: #19191e;
   background: #d9ddff;

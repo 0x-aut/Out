@@ -22,7 +22,7 @@ const emit = defineEmits<{ select: [id: string] }>()
   >
     <img :src="spot.image" :alt="spot.name" class="absolute inset-0 h-full w-full object-cover transition duration-500 group-hover:scale-[1.035]" loading="lazy" />
     <div class="absolute inset-0 bg-gradient-to-t from-black/85 via-black/15 to-black/5" />
-    <button type="button" class="absolute inset-0 z-10" :aria-label="`Open ${spot.name}`" @click="emit('select', spot.id)" />
+    <button type="button" class="absolute inset-0 z-10" :style="{ borderRadius: 'inherit' }" :aria-label="`Open ${spot.name}`" @click="emit('select', spot.id)" />
 
     <div class="pointer-events-none absolute inset-x-3 bottom-3 z-20">
       <span class="mb-2 inline-flex h-5 items-center rounded-full bg-white/95 px-2 text-[9px] font-semibold text-[#24242a]">{{ spot.category }}</span>

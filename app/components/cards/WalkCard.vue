@@ -31,7 +31,7 @@ const emit = defineEmits<{ select: [id: string] }>()
     />
     <div v-else class="absolute inset-0 bg-[radial-gradient(ellipse_at_25%_15%,#aaa4d1_0%,#65617d_48%,#292932_100%)]" />
     <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-black/5" />
-    <button type="button" class="absolute inset-0 z-10" :aria-label="`Open ${walk.title}`" @click="emit('select', walk.id)" />
+    <button type="button" class="absolute inset-0 z-10" :style="{ borderRadius: 'inherit' }" :aria-label="`Open ${walk.title}`" @click="emit('select', walk.id)" />
 
     <div class="pointer-events-none absolute inset-x-3 bottom-3 z-20">
       <div class="mb-2 flex items-center gap-1.5">
