@@ -191,9 +191,9 @@ function locateUser() {
       emit('location', location)
     },
     error => {
-      const message = error.code === error.PERMISSION_DENIED
+      const message = error.code === 1
         ? 'Location access was blocked. Allow location for Out in your browser site settings, then try again.'
-        : error.code === error.POSITION_UNAVAILABLE
+        : error.code === 2
           ? 'Your browser could not determine your current location. Check your device location settings.'
           : 'The browser location request timed out. Please try again.'
       emit('locationError', message)
@@ -239,7 +239,7 @@ onMounted(async () => {
       container: container.value,
       style: 'mapbox://styles/mapbox/streets-v12',
       center: [0, 20],
-      zoom: 1.6,
+      zoom: 3.5,
       attributionControl: true,
       logoPosition: 'bottom-left'
     })
