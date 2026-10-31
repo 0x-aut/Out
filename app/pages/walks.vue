@@ -157,7 +157,7 @@ function openWalk(id: string) {
             <div class="flex min-w-0 flex-1 flex-col py-0.5">
               <div class="mb-1 flex items-center gap-1.5">
                 <span class="rounded-full px-2 py-1 text-[8px] font-semibold" :class="walk.isOwner ? 'bg-[#f0effb] text-[#6854b4]' : 'bg-[#f1f1f4] text-[#686873]'">{{ walk.isOwner ? 'Your walk' : walk.visibility === 'public' ? 'Community' : 'Saved' }}</span>
-                <span v-if="walk.isOwner" class="ml-auto text-[8px] font-medium text-[#85858d]">{{ walk.visibility }}</span>
+                <span v-if="walk.isOwner" class="ml-auto inline-flex items-center rounded-full bg-[#f1f1f4] px-2 py-1 text-[8px] font-semibold text-[#686873]">{{ walk.visibility }}</span>
               </div>
               <button type="button" class="truncate text-left text-[13px] font-bold tracking-[-0.035em] text-[#202027]" @click="openWalk(walk.id)">{{ walk.title }}</button>
               <p class="mt-1 truncate text-[9px] text-[#777780]">{{ walk.firstStopName || walk.description || 'A route on Out' }}</p>
