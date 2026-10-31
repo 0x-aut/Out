@@ -12,6 +12,7 @@ const selected = ref<string[]>([])
 const saving = ref(false)
 const saved = ref(false)
 const error = ref('')
+const notice = ref('')
 const profileLoading = ref(true)
 const profileReady = ref(false)
 
@@ -45,19 +46,90 @@ function toggleInterest(value: string) {
 
 async function saveProfile() {
   error.value = ''
+  notice.value = ''
   saved.value = false
+
+  const interests = interestGroups.flatMap(group =>
+    group.items
+      .filter(item => selected.value.includes(item))
+      .map(name => ({ name, category: group.category }))
+  )
+
+  if (!homeBase.value.trim()) {
+    error.value = 'Add your city or neighbourhood before saving your profile.'
+    return
+  }
+
+  if (!interests.length) {
+    error.value = 'Choose at least one interest before saving your profile.'
+    return
+  }
+
+  const requestId = crypto.randomUUID()
+  console.info('[profile] save handler entered', {
+    requestId,
+    hasHomeBase: true,
+    interestCount: interests.length
+  })
+
   saving.value = true
+
   try {
-    const interests = interestGroups.flatMap(group => group.items.filter(item => selected.value.includes(item)).map(name => ({ name, category: group.category })))
-    const result = await $fetch<{ success: boolean; name: string; profile: { bio: string; homeBase: string; travelStyle: string }; interests: Array<{ name: string; category: string }> }>('/api/profile', { method: 'PUT', body: { name: name.value.trim(), profile: { bio: bio.value.trim(), homeBase: homeBase.value.trim(), travelStyle: travelStyle.value }, interests } })
-    if (!result.success || result.interests.length !== interests.length) throw new Error('Some interests could not be saved. Please try again.')
+    const result = await $fetch<{
+      success: boolean
+      name: string
+      nameUpdated: boolean
+      warning: string | null
+      profile: { bio: string; homeBase: string; travelStyle: string }
+      interests: Array<{ name: string; category: string }>
+    }>('/api/profile', {
+      method: 'PUT',
+      body: {
+        name: name.value.trim(),
+        profile: {
+          bio: bio.value.trim(),
+          homeBase: homeBase.value.trim(),
+          travelStyle: travelStyle.value
+        },
+        interests
+      },
+      headers: { 'x-out-request-id': requestId },
+      timeout: 30_000,
+      retry: 0
+    })
+
+    if (!result.success || result.interests.length !== interests.length) {
+      throw new Error('The server did not confirm that all profile interests were saved.')
+    }
+
     name.value = result.name
     selected.value = result.interests.map(item => item.name)
+    notice.value = result.warning || ''
     saved.value = true
+
+    console.info('[profile] save confirmed', {
+      requestId,
+      savedInterestCount: result.interests.length,
+      nameUpdated: result.nameUpdated
+    })
   } catch (cause: unknown) {
-    const apiError = cause as { data?: { statusMessage?: string }; message?: string }
-    error.value = apiError.data?.statusMessage || apiError.message || 'Your profile could not be saved. Please try again.'
-  } finally { saving.value = false }
+    const apiError = cause as {
+      data?: { statusMessage?: string }
+      message?: string
+      name?: string
+    }
+    const message = apiError.message || ''
+    const timedOut = /timeout|timed out|aborted/i.test(message)
+
+    console.error('[profile] save failed', { requestId, error: cause })
+
+    error.value = timedOut
+      ? `The save request timed out. Your profile may already have been saved; refresh the page to check before trying again. Reference: ${requestId}`
+      : apiError.data?.statusMessage || message || `Your profile could not be saved. Reference: ${requestId}`
+  } finally {
+    saving.value = false
+    console.info('[profile] save request finished', { requestId })
+  }
 }
 
 async function signOut() {
@@ -102,7 +174,7 @@ async function signOut() {
               <div class="mb-6"><p class="text-[10px] font-bold uppercase tracking-[0.16em] text-[#898991]">01 / About</p><h2 class="mt-1.5 text-[17px] font-semibold tracking-[-0.04em] text-[#202027]">The basics</h2><p class="mt-1 text-[11px] leading-relaxed text-[#85858d]">The details people and places can know you by.</p></div>
               <div class="space-y-5">
                 <label class="block"><span class="text-[11px] font-semibold text-[#42424a]">Name</span><input v-model="name" required maxlength="80" autocomplete="name" class="mt-2 h-11 w-full rounded-xl border border-[#e7e7eb] bg-[#fbfbfc] px-3.5 text-[12px] text-[#202027] outline-none transition placeholder:text-[#a0a0a8] focus:border-[#777780] focus:bg-white"></label>
-                <label class="block"><span class="text-[11px] font-semibold text-[#42424a]">Home base</span><input v-model="homeBase" maxlength="100" autocomplete="address-level2" placeholder="City or neighbourhood" class="mt-2 h-11 w-full rounded-xl border border-[#e7e7eb] bg-[#fbfbfc] px-3.5 text-[12px] text-[#202027] outline-none transition placeholder:text-[#a0a0a8] focus:border-[#777780] focus:bg-white"></label>
+                <label class="block"><span class="text-[11px] font-semibold text-[#42424a]">Home base</span><input v-model="homeBase" required maxlength="100" autocomplete="address-level2" placeholder="City or neighbourhood" class="mt-2 h-11 w-full rounded-xl border border-[#e7e7eb] bg-[#fbfbfc] px-3.5 text-[12px] text-[#202027] outline-none transition placeholder:text-[#a0a0a8] focus:border-[#777780] focus:bg-white"></label>
                 <label class="block"><span class="text-[11px] font-semibold text-[#42424a]">About you</span><textarea v-model="bio" maxlength="240" rows="4" placeholder="What do you enjoy? What are you always curious about?" class="mt-2 w-full resize-y rounded-xl border border-[#e7e7eb] bg-[#fbfbfc] px-3.5 py-3 text-[12px] leading-relaxed text-[#202027] outline-none transition placeholder:text-[#a0a0a8] focus:border-[#777780] focus:bg-white"></textarea><span class="mt-1.5 block text-right text-[9px] text-[#a0a0a8]">{{ bio.length }}/240</span></label>
                 <label class="block"><span class="text-[11px] font-semibold text-[#42424a]">Travel style</span><select v-model="travelStyle" class="mt-2 h-11 w-full appearance-none rounded-xl border border-[#e7e7eb] bg-[#fbfbfc] px-3.5 text-[12px] text-[#202027] outline-none transition focus:border-[#777780] focus:bg-white"><option v-for="style in styles" :key="style">{{ style }}</option></select></label>
               </div>
@@ -123,7 +195,7 @@ async function signOut() {
           </div>
 
           <div class="flex flex-col gap-3 border-t border-[#ededf0] bg-[#fcfcfd] px-5 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-8">
-            <div class="min-h-[18px]"><p v-if="error" role="alert" class="text-[11px] font-medium text-[#b33d3d]">{{ error }}</p><p v-else-if="saved" role="status" class="inline-flex items-center gap-1.5 text-[11px] font-medium text-[#4e6856]"><Check :size="13" /> Changes saved</p><p v-else class="text-[10px] text-[#898991]">You can update these details whenever you like.</p></div>
+            <div class="min-h-[18px]"><p v-if="error" role="alert" class="text-[11px] font-medium text-[#b33d3d]">{{ error }}</p><p v-else-if="notice" role="status" class="text-[11px] font-medium text-[#8a6b34]">{{ notice }}</p><p v-else-if="saved" role="status" class="inline-flex items-center gap-1.5 text-[11px] font-medium text-[#4e6856]"><Check :size="13" /> Changes saved</p><p v-else class="text-[10px] text-[#898991]">You can update these details whenever you like.</p></div>
             <ActionButton type="submit" :disabled="saving || !profileReady"><Check v-if="saved && !saving" :size="15" /><Save v-else :size="15" />{{ saving ? 'Saving…' : profileLoading ? 'Loading profile…' : !profileReady ? 'Profile unavailable' : saved ? 'Saved' : 'Save changes' }}</ActionButton>
           </div>
         </form>
