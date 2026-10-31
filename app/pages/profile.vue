@@ -49,10 +49,14 @@ async function saveProfile() {
   saving.value = true
   try {
     const interests = interestGroups.flatMap(group => group.items.filter(item => selected.value.includes(item)).map(name => ({ name, category: group.category })))
-    await $fetch('/api/profile', { method: 'PUT', body: { name: name.value.trim(), profile: { bio: bio.value.trim(), homeBase: homeBase.value.trim(), travelStyle: travelStyle.value }, interests } })
+    const result = await $fetch<{ success: boolean; name: string; profile: { bio: string; homeBase: string; travelStyle: string }; interests: Array<{ name: string; category: string }> }>('/api/profile', { method: 'PUT', body: { name: name.value.trim(), profile: { bio: bio.value.trim(), homeBase: homeBase.value.trim(), travelStyle: travelStyle.value }, interests } })
+    if (!result.success || result.interests.length !== interests.length) throw new Error('Some interests could not be saved. Please try again.')
+    name.value = result.name
+    selected.value = result.interests.map(item => item.name)
     saved.value = true
-  } catch (cause) {
-    error.value = cause instanceof Error ? cause.message : 'Your profile could not be saved. Please try again.'
+  } catch (cause: unknown) {
+    const apiError = cause as { data?: { statusMessage?: string }; message?: string }
+    error.value = apiError.data?.statusMessage || apiError.message || 'Your profile could not be saved. Please try again.'
   } finally { saving.value = false }
 }
 
@@ -120,7 +124,7 @@ async function signOut() {
 
           <div class="flex flex-col gap-3 border-t border-[#ededf0] bg-[#fcfcfd] px-5 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-8">
             <div class="min-h-[18px]"><p v-if="error" role="alert" class="text-[11px] font-medium text-[#b33d3d]">{{ error }}</p><p v-else-if="saved" role="status" class="inline-flex items-center gap-1.5 text-[11px] font-medium text-[#4e6856]"><Check :size="13" /> Changes saved</p><p v-else class="text-[10px] text-[#898991]">You can update these details whenever you like.</p></div>
-            <button type="submit" :disabled="saving || !profileReady" class="inline-flex h-11 items-center justify-center gap-2 rounded-full bg-gradient-to-b from-[#303036] to-[#151519] px-7 text-[11px] font-semibold text-white shadow-[0_5px_14px_rgba(22,22,27,0.18)] transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-50"><Check v-if="saved && !saving" :size="14" /><Save v-else :size="14" />{{ saving ? 'Saving…' : profileLoading ? 'Loading profile…' : !profileReady ? 'Profile unavailable' : saved ? 'Saved' : 'Save changes' }}</button>
+            <ActionButton type="submit" :disabled="saving || !profileReady"><Check v-if="saved && !saving" :size="15" /><Save v-else :size="15" />{{ saving ? 'Saving…' : profileLoading ? 'Loading profile…' : !profileReady ? 'Profile unavailable' : saved ? 'Saved' : 'Save changes' }}</ActionButton>
           </div>
         </form>
       </template>
