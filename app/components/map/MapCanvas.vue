@@ -2,7 +2,6 @@
 import 'mapbox-gl/dist/mapbox-gl.css'
 import type {
   GeoJSONSource as MapboxGeoJSONSource,
-  GeolocateControl as MapboxGeolocateControl,
   Map as MapboxMap,
   Marker as MapboxMarker
 } from 'mapbox-gl'
@@ -18,6 +17,7 @@ const emit = defineEmits<{
   select: [place: MapPlace]
   location: [location: UserMapLocation]
   locationError: [message: string]
+  ready: []
 }>()
 
 const config = useRuntimeConfig()
@@ -28,7 +28,7 @@ const mapLoading = ref(true)
 
 let map: MapboxMap | null = null
 let mapbox: typeof import('mapbox-gl/esm') | null = null
-let geolocateControl: MapboxGeolocateControl | null = null
+let userLocationMarker: MapboxMarker | null = null
 let markers: MapboxMarker[] = []
 let pendingFocusId: string | null = null
 let mapLoaded = false
@@ -143,13 +143,67 @@ function focusPlace(id: string) {
   pendingFocusId = null
 }
 
+function updateUserLocationMarker(location: UserMapLocation) {
+  if (!map || !mapbox) return
+
+  if (!userLocationMarker) {
+    const element = document.createElement('div')
+    element.className = 'out-browser-location-marker'
+    element.setAttribute('aria-label', 'Your browser location')
+    userLocationMarker = new mapbox.Marker({ element, anchor: 'center' })
+      .setLngLat([location.longitude, location.latitude])
+      .addTo(map)
+    return
+  }
+
+  userLocationMarker.setLngLat([location.longitude, location.latitude])
+}
+
 function locateUser() {
-  if (!geolocateControl) {
+  if (!map || !mapLoaded) {
     emit('locationError', 'The map is still loading. Please try again in a moment.')
     return
   }
 
-  geolocateControl.trigger()
+  if (!navigator.geolocation) {
+    emit('locationError', 'This browser does not support location access. Try a browser with geolocation enabled.')
+    return
+  }
+
+  navigator.geolocation.getCurrentPosition(
+    position => {
+      if (!map || !mapLoaded) return
+
+      const location: UserMapLocation = {
+        latitude: position.coords.latitude,
+        longitude: position.coords.longitude,
+        accuracy: position.coords.accuracy
+      }
+
+      hasLocatedUser = true
+      updateUserLocationMarker(location)
+      map.flyTo({
+        center: [location.longitude, location.latitude],
+        zoom: 15,
+        duration: 900,
+        essential: true
+      })
+      emit('location', location)
+    },
+    error => {
+      const message = error.code === error.PERMISSION_DENIED
+        ? 'Location access was blocked. Allow location for Out in your browser site settings, then try again.'
+        : error.code === error.POSITION_UNAVAILABLE
+          ? 'Your browser could not determine your current location. Check your device location settings.'
+          : 'The browser location request timed out. Please try again.'
+      emit('locationError', message)
+    },
+    {
+      enableHighAccuracy: true,
+      timeout: 15_000,
+      maximumAge: 30_000
+    }
+  )
 }
 
 defineExpose({ locateUser, focusPlace })
@@ -197,33 +251,6 @@ onMounted(async () => {
 
       map.addControl(new mapbox.NavigationControl({ showCompass: false }), 'bottom-right')
 
-      geolocateControl = new mapbox.GeolocateControl({
-        positionOptions: {
-          enableHighAccuracy: true,
-          timeout: 12_000,
-          maximumAge: 30_000
-        },
-        trackUserLocation: false,
-        showUserLocation: true,
-        showAccuracyCircle: true,
-        showButton: false
-      })
-
-      geolocateControl.on('geolocate', position => {
-        hasLocatedUser = true
-        emit('location', {
-          latitude: position.coords.latitude,
-          longitude: position.coords.longitude,
-          accuracy: position.coords.accuracy
-        })
-      })
-
-      geolocateControl.on('error', error => {
-        emit('locationError', error.message || 'Your browser could not provide your current location.')
-      })
-
-      map.addControl(geolocateControl, 'top-right')
-
       map.addSource('out-walk-route', {
         type: 'geojson',
         data: routeFeatureCollection()
@@ -257,6 +284,7 @@ onMounted(async () => {
       fitPlaces()
       syncRoute()
       if (pendingFocusId) focusPlace(pendingFocusId)
+      emit('ready')
     })
 
     map.on('error', event => {
@@ -275,7 +303,8 @@ onMounted(async () => {
 onBeforeUnmount(() => {
   markers.forEach(marker => marker.remove())
   markers = []
-  geolocateControl = null
+  userLocationMarker?.remove()
+  userLocationMarker = null
   map?.remove()
   map = null
   mapLoaded = false
@@ -304,6 +333,15 @@ onBeforeUnmount(() => {
 </template>
 
 <style>
+.out-browser-location-marker {
+  width: 18px;
+  height: 18px;
+  border: 4px solid #ffffff;
+  border-radius: 9999px;
+  background: #347de1;
+  box-shadow: 0 0 0 6px rgb(52 125 225 / 18%), 0 2px 8px rgb(20 20 28 / 28%);
+}
+
 .out-map-marker {
   display: flex;
   max-width: 180px;
