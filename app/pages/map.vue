@@ -556,6 +556,7 @@ watch(chatOpen, open => {
       @select="togglePlace"
       @location="onLocation"
       @location-error="onLocationError"
+      @ready="requestLocation"
     />
 
     <div class="pointer-events-none absolute inset-x-0 top-0 z-20 px-3 pt-[max(12px,env(safe-area-inset-top))] sm:px-5 sm:pt-5">
