@@ -35,7 +35,7 @@ const emit = defineEmits<{ select: [id: string] }>()
       </span>
     </div>
 
-    <button type="button" class="absolute inset-0 z-10" :aria-label="'Open ' + place.name + ' on the map'" @click="emit('select', place.id)" />
+    <button type="button" class="absolute inset-0 z-10" :style="{ borderRadius: 'inherit' }" :aria-label="'Open ' + place.name + ' on the map'" @click="emit('select', place.id)" />
     <div class="pointer-events-none px-3.5 pb-3 pt-2.5">
       <div class="mb-1 flex items-center gap-2">
         <span class="truncate text-[9px] font-semibold uppercase tracking-[0.08em] text-[#888891]">{{ place.category || 'Place' }}</span>
