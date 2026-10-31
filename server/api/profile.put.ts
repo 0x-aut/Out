@@ -44,11 +44,16 @@ export default defineEventHandler(async (event) => {
     )
     await client.query('DELETE FROM user_interests WHERE user_id = $1', [user.id])
 
-    for (const interest of interests) {
-      await client.query(
-        'INSERT INTO user_interests (user_id, name, category) VALUES ($1, $2, $3)',
-        [user.id, interest.name, interest.category]
-      )
+    const savedInterests = await client.query<{ name: string; category: string }>(
+      `INSERT INTO user_interests (user_id, name, category)
+       SELECT $1, interest.name, interest.category
+       FROM jsonb_to_recordset($2::jsonb) AS interest(name TEXT, category TEXT)
+       RETURNING name, category`,
+      [user.id, JSON.stringify(interests)]
+    )
+
+    if (savedInterests.rowCount !== interests.length) {
+      throw new Error('Not all selected interests were persisted')
     }
 
     await client.query('COMMIT')
@@ -59,7 +64,7 @@ export default defineEventHandler(async (event) => {
       body: { name }
     })
 
-    return { success: true, name, profile: { bio, homeBase, travelStyle }, interests }
+    return { success: true, name, profile: { bio, homeBase, travelStyle }, interests: savedInterests.rows }
   } catch (error) {
     if (!profileCommitted) await client.query('ROLLBACK')
     console.error('Could not save Out profile', error)
