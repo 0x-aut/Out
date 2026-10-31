@@ -1,6 +1,5 @@
 import { randomUUID } from 'node:crypto'
 import { createError, getRequestHeader, setResponseHeader, toWebRequest } from 'h3'
-import type { PoolClient } from 'pg'
 import { auth } from '../lib/auth'
 import { database } from '../utils/database'
 import { requireUser } from '../utils/auth-session'
@@ -51,7 +50,7 @@ export default defineEventHandler(async (event) => {
 
   const startedAt = Date.now()
   let stage = 'request_received'
-  let client: PoolClient | undefined
+  let client: Awaited<ReturnType<typeof database.connect>> | undefined
   let transactionStarted = false
   let profileCommitted = false
   let discardClient = false
@@ -106,8 +105,8 @@ export default defineEventHandler(async (event) => {
     log('database connection acquired')
 
     stage = 'database_transaction'
-    await client.query('BEGIN')
     transactionStarted = true
+    await client.query('BEGIN')
     await client.query("SET LOCAL statement_timeout = '8000ms'")
 
     await client.query(
