@@ -153,7 +153,7 @@ function openWalk(id: string) {
             <NuxtLink :to="'/walks/' + walk.id" class="relative h-[108px] w-[104px] shrink-0 overflow-hidden rounded-[16px] bg-[#77738e]" :aria-label="'Open ' + walk.title">
               <img v-if="walk.imageUrl" :src="walk.imageUrl" :alt="walk.title" class="h-full w-full object-cover">
               <div v-else class="h-full w-full bg-[radial-gradient(ellipse_at_25%_15%,#aaa4d1_0%,#65617d_48%,#292932_100%)]"></div>
-            </button>
+            </NuxtLink>
             <div class="flex min-w-0 flex-1 flex-col py-0.5">
               <div class="mb-1 flex items-center gap-1.5">
                 <span class="rounded-full px-2 py-1 text-[8px] font-semibold" :class="walk.isOwner ? 'bg-[#f0effb] text-[#6854b4]' : 'bg-[#f1f1f4] text-[#686873]'">{{ walk.isOwner ? 'Your walk' : walk.visibility === 'public' ? 'Community' : 'Saved' }}</span>
